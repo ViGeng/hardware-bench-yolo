@@ -1,0 +1,1 @@
+git clone https://github.com/intel-iot-devkit/sample-videos.git
