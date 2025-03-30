@@ -1,17 +1,17 @@
+# Hardware Benchmarks for YOLO
 
-A40 batch=1 gpu=36.42 cpu=137.50
-preprocess=1.21
-inference=9.25
-postprocess=0.55
-total processing=11.01
-throughput=82.98
+Though manufacturers provide performance specifications for their hardware, these numbers are often not representative of real-world performance or are not always intuitive to interpret. This toy project aims to provide a collective benchmark of various hardware configurations for commonly used models such as YOLO series.
 
-A40 atch=8
-gpu=56.51
-cpu=175.33
-pre=1.24
-inf=3.29
-post=0.39
-totol proprocessing=4.91
-throughput=169.26
+If you happen to have access to any hardware or performance metrics, please feel free to contribute by submitting a pull request. The goal is to create a comprehensive benchmark that can help others make informed decisions when selecting hardware for their machine learning tasks or real-world applications.
 
+## Benchmark Specifications
+
+To ensure the accuracy and reliability of the benchmarks, we will be using same datasets and models across all hardware configurations. 
+
+### Dataset
+
+**Videos**: [sample-videos](https://github.com/intel-iot-devkit/sample-videos)
+
+### Models
+
+YOLO Series by [Ultralytics](https://github.com/ultralytics/ultralytics)

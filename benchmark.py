@@ -9,7 +9,7 @@ from collections import deque
 import pynvml  # For GPU utilization monitoring
 
 # Load a pretrained model
-model = YOLO("yolo11m.pt")
+model = YOLO('yolov8n.pt')
 
 # Define path to video file
 source = "./sample-videos"
@@ -87,7 +87,7 @@ monitor_thread.daemon = True
 monitor_thread.start()
 
 # Run inference on the source
-results = model(source, stream=True, batch=4)  # generator of Results objects
+results = model(source, stream=True, batch=1)  # generator of Results objects
 
 # Process results generator
 for result in results:

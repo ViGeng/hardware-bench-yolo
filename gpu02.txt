@@ -1,48 +1,48 @@
 
 ===== BENCHMARK SUMMARY =====
 Total frames processed: 7208
-Total time elapsed: 42.59 seconds
-Throughput: 169.26 frames per second
+Total time elapsed: 60.10 seconds
+Throughput: 119.93 frames per second
 
 ===== DETAILED METRICS =====
 Preprocess time (ms):
-  Min: 1.18
-  Max: 4.16
-  Avg: 1.24
+  Min: 1.16
+  Max: 5.51
+  Avg: 1.23
 
 Inference time (ms):
-  Min: 3.27
-  Max: 17.46
-  Avg: 3.29
+  Min: 5.08
+  Max: 63.68
+  Avg: 5.31
 
 Postprocess time (ms):
-  Min: 0.23
-  Max: 15.03
-  Avg: 0.39
+  Min: 0.37
+  Max: 75.40
+  Avg: 0.68
 
 Total processing time per frame (ms):
-  Min: 4.70
-  Max: 24.77
-  Avg: 4.91
+  Min: 6.64
+  Max: 83.78
+  Avg: 7.21
 
 ===== RESOURCE UTILIZATION =====
 CPU Usage (%):
-  Min: 89.80
-  Max: 239.20
-  Avg: 175.33
+  Min: 88.20
+  Max: 209.50
+  Avg: 152.52
 
 Memory Usage (%):
-  Min: 3.50
-  Max: 3.80
-  Avg: 3.78
+  Min: 3.40
+  Max: 3.60
+  Avg: 3.60
 
 GPU Memory Usage (%):
   Min: 0.00
-  Max: 0.67
-  Avg: 0.38
+  Max: 0.14
+  Avg: 0.12
 
 GPU Utilization (%):
   Min: 0.00
-  Max: 66.00
-  Avg: 56.51
+  Max: 21.00
+  Avg: 19.18
   Device: NVIDIA A40
