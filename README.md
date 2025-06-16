@@ -15,3 +15,10 @@ To ensure the accuracy and reliability of the benchmarks, we will be using same 
 ### Models
 
 YOLO Series by [Ultralytics](https://github.com/ultralytics/ultralytics)
+
+
+### Potential Future Works
+
+- More typical workload (Detection, Classification, or CV tasks)
+- More hardwares
+- Container based deliverables for convenience reproduction
