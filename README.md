@@ -16,6 +16,11 @@ To ensure the accuracy and reliability of the benchmarks, we will be using same 
 
 YOLO Series by [Ultralytics](https://github.com/ultralytics/ultralytics)
 
+### Metrics
+
+* Throughput
+* Latency (different stages)
+* Resource usage (CPU, GPU)
 
 ### Potential Future Works
 
