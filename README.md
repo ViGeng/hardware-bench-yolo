@@ -11,6 +11,8 @@ To ensure the accuracy and reliability of the benchmarks, we will be using same 
 ### Dataset
 
 **Videos**: [sample-videos](https://github.com/intel-iot-devkit/sample-videos)
+* other common detection datasets (coco, VoC, etc)
+* live stream (pratical live scenarios, with diff resolutions, or conditions)
 
 ### Models
 
