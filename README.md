@@ -22,6 +22,13 @@ YOLO Series by [Ultralytics](https://github.com/ultralytics/ultralytics)
 * Latency (different stages)
 * Resource usage (CPU, GPU)
 
+### Devices
+
+* Powerful Nvidia GPUs
+* Intel CPUs
+* Mobile SoCs
+* Edge Devices (such as Raspberry Pis)
+
 ### Potential Future Works
 
 - More typical workload (Detection, Classification, or CV tasks)
