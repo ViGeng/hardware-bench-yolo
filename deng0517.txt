@@ -1,0 +1,48 @@
+
+===== BENCHMARK SUMMARY =====
+Total frames processed: 901
+Total time elapsed: 25.12 seconds
+Throughput: 35.87 frames per second
+
+===== DETAILED METRICS =====
+Preprocess time (ms):
+  Min: 0.91
+  Max: 41.18
+  Avg: 1.47
+
+Inference time (ms):
+  Min: 4.60
+  Max: 169.73
+  Avg: 6.72
+
+Postprocess time (ms):
+  Min: 0.50
+  Max: 409.40
+  Avg: 1.97
+
+Total processing time per frame (ms):
+  Min: 6.16
+  Max: 497.90
+  Avg: 10.16
+
+===== RESOURCE UTILIZATION =====
+CPU Usage (%):
+  Min: 0.00
+  Max: 168.00
+  Avg: 59.41
+
+Memory Usage (%):
+  Min: 69.10
+  Max: 73.40
+  Avg: 71.37
+
+GPU Memory Usage (%):
+  Min: 0.00
+  Max: 0.83
+  Avg: 0.59
+
+GPU Utilization (%):
+  Min: 0.00
+  Max: 35.00
+  Avg: 14.16
+  Device: NVIDIA GeForce RTX 3060 Ti

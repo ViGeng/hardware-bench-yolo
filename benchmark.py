@@ -12,7 +12,7 @@ import pynvml  # For GPU utilization monitoring
 model = YOLO('yolov8n.pt')
 
 # Define path to video file
-source = "./sample-videos"
+source = "D:/samplevideos/bolt-detection.mp4"
 
 # Initialize metrics collection
 preprocess_times = []
