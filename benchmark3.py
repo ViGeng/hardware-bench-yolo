@@ -3,8 +3,6 @@
 Enhanced Deep Learning Benchmark Tool - 增强版深度学习基准测试工具
 支持多种模型类型和数据集的交互式基准测试
 
-修复了MNIST数据集的通道数不匹配问题，并添加了自定义样本数量功能
-
 主要功能：
 1. 交互式设备选择 (CPU/GPU) - 支持返回上一级
 2. 模型类型选择 (Detection/Classification) - 支持返回上一级
