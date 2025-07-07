@@ -50,7 +50,7 @@ YOLO Series by [Ultralytics](https://github.com/ultralytics/ultralytics)
 YOLOv8 基准测试工具 - 使用说明
 文件说明
 benchmark.py - 原版基准测试程序
-benchmark_improved.py - 改进版基准测试程序（推荐使用）
+benchmark_improved.py - 改进版基准测试程序
 requirements.txt - 依赖包列表
 改进功能
 命令行参数支持 - 不用修改代码就能改变测试参数
