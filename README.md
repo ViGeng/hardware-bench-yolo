@@ -43,7 +43,7 @@ YOLO Series by [Ultralytics](https://github.com/ultralytics/ultralytics)
 
 
 # #####################################################################
-Changelog
+### Changelog
 
 [v5.0.0] - Enhanced Deep Learning Benchmark Tool with Comprehensive Logging
 Added
