@@ -1,0 +1,31 @@
+=== SYSTEM INFORMATION ===
+Metric,Value,Unit
+Hostname,deng0517,
+Model Type,classification,
+Model Name,ResNet50,
+Dataset,MNIST,
+Device,cuda:0,
+Device Name,NVIDIA GeForce RTX 3060 Ti,
+PyTorch Version,2.7.1+cu118,
+CUDA Available,True,
+Test Start Time,2025-07-16 18:40:49,
+
+=== PERFORMANCE METRICS ===
+Metric,Value,Unit
+Total Samples,100,samples
+Total Time,1.2392,seconds
+Throughput,80.6945,samples/sec
+Avg Time per Sample,12.3924,ms
+
+=== TIMING BREAKDOWN ===
+Stage,Min (ms),Max (ms),Avg (ms),Std (ms)
+Preprocessing Times,0.0010,1.5042,0.2261,0.4595
+Inference Times,2.9967,188.2477,6.2406,18.3361
+Batch Times,2.9976,189.2574,6.4659,18.4193
+
+=== RESOURCE UTILIZATION ===
+Resource,Min (%),Max (%),Avg (%)
+CPU Usage,86.00,116.40,100.60
+Memory Usage,80.60,81.00,80.90
+GPU Memory,1.24,1.39,1.32
+GPU Utilization,0.00,0.00,0.00
