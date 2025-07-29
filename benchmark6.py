@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """
-Enhanced Deep Learning Benchmark Tool - 增强版深度学习基准测试工具
 支持多种模型类型和数据集的交互式基准测试
 
 新增功能：
@@ -37,7 +36,6 @@ Enhanced Deep Learning Benchmark Tool - 增强版深度学习基准测试工具
 - 新增语义分割模式和相关模型
 - 新增完整的日志记录功能
 
-Author: Enhanced for professional AI benchmarking
 Platform: Ubuntu 22.04 + NVIDIA GPU support
 """
 
