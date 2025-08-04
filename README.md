@@ -1,38 +1,43 @@
-# Hardware Benchmarks for YOLO
+# Deep Learning Benchmark Tool
 
-Though manufacturers provide performance specifications for their hardware, these numbers are often not representative of real-world performance or are not always intuitive to interpret. This toy project aims to provide a collective benchmark of various hardware configurations for commonly used models such as YOLO series.
+一个深度学习模型基准测试工具，支持分类、检测和分割模型的性能评估。支持交互式界面和命令行参数两种使用方式。
 
-If you happen to have access to any hardware or performance metrics, please feel free to contribute by submitting a pull request. The goal is to create a comprehensive benchmark that can help others make informed decisions when selecting hardware for their machine learning tasks or real-world applications.
+## 项目结构
 
-## Benchmark Specifications
+```
+benchmark_project/
+├── main.py              # 主程序入口
+├── config.py            # 配置模块 - 模型和数据集配置
+├── utils.py             # 工具模块 - 日志、依赖检查等
+├── datasets.py          # 数据集模块 - 各种数据集加载
+├── models.py            # 模型模块 - 模型加载和管理
+├── rendering.py         # 渲染模块 - 结果可视化渲染
+├── benchmarks.py        # 基准测试模块 - 测试逻辑
+├── interactive.py       # 交互界面模块 - 用户交互
+├── cli.py               # 命令行界面模块 - 命令行参数处理
+├── monitoring.py        # 监控模块 - 资源监控和统计
+├── output.py            # 输出模块 - 结果保存和图表生成
+├── README.md            # 说明文档
+└── changelog.txt        # 更新日志
+```
 
-To ensure the accuracy and reliability of the benchmarks, we will be using same datasets and models across all hardware configurations. 
+## 功能特性
 
-### Dataset
+### 支持的模型类型
+- **图像分类**: ResNet, EfficientNet, Vision Transformer, MobileNet等
+- **目标检测**: YOLOv8系列, Faster R-CNN, FCOS等
+- **语义分割**: DeepLabV3+, UNet, PSPNet, FPN等
 
-**Videos**: [sample-videos](https://github.com/intel-iot-devkit/sample-videos)
-* other common detection datasets (coco, VoC, etc)
-* live stream (pratical live scenarios, with diff resolutions, or conditions)
+### 支持的数据集
+- **分类**: MNIST, CIFAR-10, ImageNet样本, 合成数据
+- **检测**: COCO样本, KITTI, 预设测试图像, 合成数据
+- **分割**: Cityscapes, 合成分割数据
 
-### Models
-
-YOLO Series by [Ultralytics](https://github.com/ultralytics/ultralytics)
-
-### Metrics
-
-* Throughput
-* Latency (different stages)
-* Resource usage (CPU, GPU)
-
-### Devices
-
-* Powerful Nvidia GPUs
-* Intel CPUs
-* Mobile SoCs
-* Edge Devices (such as Raspberry Pis)
-
-### Potential Future Works
-
-- More typical workload (Detection, Classification, or CV tasks)
-- More hardwares
-- Container based deliverables for convenience reproduction
+### 核心功能
+1. **交互式配置** - 支持设备、模型、数据集的灵活选择
+2. **命令行支持** - 支持批量测试和自动化脚本
+3. **详细性能分析** - 逐帧时间统计和FPS分析
+4. **资源监控** - CPU、内存、GPU使用率实时监控
+5. **结果可视化** - 自动生成性能图表和分析报告
+6. **多格式输出** - CSV详细数据和PNG可视化图表
+7. **完整日志系统** - 详细的执行日志记录
