@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 __pycache__/
 *.py[cod]
 *$py.class
@@ -78,3 +79,7 @@ venv.bak/
 .mypy_cache/
 .dmypy.json
 dmypy.json
+=======
+*.mp4
+*.pt
+>>>>>>> teacher/pypi
