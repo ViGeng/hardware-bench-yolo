@@ -91,11 +91,11 @@ echo "批量测试完成，结果保存在 ./results/ 目录"
 ```
 
 ### 输出文件
-- `hostname_benchmark_log_timestamp.log` - 详细执行日志
-- `hostname_modeltype_detailed_timestamp.csv` - 每帧详细时间数据
-- `hostname_modeltype_summary_timestamp.csv` - 汇总统计信息
-- `hostname_modeltype_speed_analysis_timestamp.png` - 速度分析图表
-- `hostname_modeltype_summary_timestamp.png` - 性能总结图表
+- `benchmark_log_timestamp.log` - 详细执行日志
+- `modeltype_detailed_timestamp.csv` - 每帧详细时间数据
+- `modeltype_summary_timestamp.csv` - 汇总统计信息
+- `modeltype_speed_analysis_timestamp.png` - 速度分析图表
+- `modeltype_summary_timestamp.png` - 性能总结图表
 
 ## 模型名称对照表
 
@@ -129,25 +129,6 @@ echo "批量测试完成，结果保存在 ./results/ 目录"
 | `pspnet_resnet50` | PSPNet ResNet50 |
 | `fpn_resnet50` | FPN ResNet50 |
 
-## 性能评级标准
-
-### 分类模型
-- Excellent 🟢: > 100 FPS
-- Good 🟡: 50-100 FPS
-- Fair 🟠: 10-50 FPS
-- Slow 🔴: < 10 FPS
-
-### 检测模型
-- Excellent 🟢: > 30 FPS
-- Good 🟡: 15-30 FPS
-- Fair 🟠: 5-15 FPS
-- Slow 🔴: < 5 FPS
-
-### 分割模型
-- Excellent 🟢: > 20 FPS
-- Good 🟡: 10-20 FPS
-- Fair 🟠: 3-10 FPS
-- Slow 🔴: < 3 FPS
 
 ## 使用场景
 

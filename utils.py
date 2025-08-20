@@ -13,9 +13,14 @@ import torch
 
 def setup_logging():
     """设置日志系统"""
-    timestamp = time.strftime("%Y%m%d_%H%M%S")
-    hostname = socket.gethostname()
-    log_filename = f"{hostname}_benchmark_log_{timestamp}.log"
+    # 创建results目录（如果不存在）
+    results_dir = "results"
+    if not os.path.exists(results_dir):
+        os.makedirs(results_dir)
+    
+    # 生成带时间戳的日志文件名
+    timestamp = time.strftime('%Y%m%d_%H%M%S')
+    log_filename = os.path.join(results_dir, f"benchmark_log_{timestamp}.log")
     
     # 配置日志格式
     log_format = '%(asctime)s - %(levelname)s - %(message)s'
@@ -48,7 +53,8 @@ def check_dependencies():
         'timm': False,
         'matplotlib': False,
         'seaborn': False,
-        'torchvision_detection': False
+        'torchvision_detection': False,
+        'tqdm': False
     }
     
     # 检查 ultralytics
@@ -109,6 +115,13 @@ def check_dependencies():
     except ImportError:
         pass
     
+    # 检查 tqdm
+    try:
+        from tqdm import tqdm
+        dependencies['tqdm'] = True
+    except ImportError:
+        pass
+    
     return dependencies
 
 def print_dependency_status(dependencies):
@@ -133,42 +146,15 @@ def print_dependency_status(dependencies):
     if not dependencies['matplotlib']:
         missing_deps.append("matplotlib seaborn (pip install matplotlib seaborn)")
     
+    if not dependencies['tqdm']:
+        missing_deps.append("tqdm (pip install tqdm)")
+    
     if missing_deps:
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] 检测到缺失依赖")
         print("建议安装以下依赖以获得完整功能:")
         for dep in missing_deps:
             print(f"  - {dep}")
         print()
-
-def calculate_performance_rating(model_type, fps):
-    """计算性能评级"""
-    if model_type == 'classification':
-        if fps > 100: 
-            return "Excellent 🟢"
-        elif fps > 50: 
-            return "Good 🟡"
-        elif fps > 10: 
-            return "Fair 🟠"
-        else: 
-            return "Slow 🔴"
-    elif model_type == 'detection':
-        if fps > 30: 
-            return "Excellent 🟢"
-        elif fps > 15: 
-            return "Good 🟡"
-        elif fps > 5: 
-            return "Fair 🟠"
-        else: 
-            return "Slow 🔴"
-    else:  # segmentation
-        if fps > 20: 
-            return "Excellent 🟢"
-        elif fps > 10: 
-            return "Good 🟡"
-        elif fps > 3: 
-            return "Fair 🟠"
-        else: 
-            return "Slow 🔴"
 
 def safe_time_value(time_value, min_value=0.001):
     """确保时间值合理，避免异常数据"""

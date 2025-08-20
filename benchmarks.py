@@ -7,7 +7,10 @@ import time
 import logging
 import numpy as np
 import torch
-from utils import safe_time_value
+from utils import safe_time_value, check_dependencies
+
+# 检查依赖
+dependencies = check_dependencies()
 
 class BenchmarkRunner:
     """基准测试运行器"""
@@ -23,6 +26,18 @@ class BenchmarkRunner:
         
         self.total_samples = 0
         self.detailed_results = []
+        
+        # 初始化 tqdm（如果可用）
+        self.tqdm_available = dependencies.get('tqdm', False)
+        if self.tqdm_available:
+            try:
+                from tqdm import tqdm
+                self.tqdm = tqdm
+            except ImportError:
+                self.tqdm_available = False
+                self.tqdm = None
+        else:
+            self.tqdm = None
     
     def run_classification_benchmark(self, dataloader):
         """运行分类模型基准测试"""
@@ -38,6 +53,24 @@ class BenchmarkRunner:
         rendering_times = []
         
         self.model.eval()
+        
+        # 计算总迭代次数 - 修改为支持无限采样
+        if self.test_samples == -1:
+            total_iterations = len(dataloader)
+        else:
+            total_iterations = self.test_samples
+        
+        # 使用 tqdm 或传统进度显示
+        if self.tqdm_available:
+            progress_bar = self.tqdm(
+                total=total_iterations,
+                desc="Processing samples",
+                unit="samples",
+                disable=False
+            )
+        else:
+            progress_bar = None
+        
         with torch.no_grad():
             for batch_idx, (data, target) in enumerate(dataloader):
                 batch_start = time.time()
@@ -98,14 +131,24 @@ class BenchmarkRunner:
                 
                 self.total_samples += len(data)
                 
-                # 进度显示
-                if batch_idx % 10 == 0:
+                # 更新进度条信息
+                if self.tqdm_available and progress_bar:
                     fps = 1000.0 / (batch_time / len(data)) if batch_time > 0 else 0
-                    self._print_progress(fps)
+                    progress_bar.set_postfix({'FPS': f'{fps:.1f}'})
+                    progress_bar.update(len(data))
+                else:
+                    # 传统进度显示（减少频率）
+                    if batch_idx % 50 == 0:
+                        fps = 1000.0 / (batch_time / len(data)) if batch_time > 0 else 0
+                        self._print_progress(fps)
                 
                 # 检查是否达到目标样本数
                 if self._should_stop_testing():
                     break
+        
+        # 关闭进度条
+        if self.tqdm_available and progress_bar:
+            progress_bar.close()
         
         self.logger.info(f"分类模型基准测试完成，总计处理 {self.total_samples} 个样本")
         
@@ -153,6 +196,24 @@ class BenchmarkRunner:
         rendering_times = []
         
         self.model.eval()
+        
+        # 计算总迭代次数 - 修改为支持无限采样
+        if self.test_samples == -1:
+            total_iterations = len(dataloader)
+        else:
+            total_iterations = self.test_samples
+        
+        # 使用 tqdm 或传统进度显示
+        if self.tqdm_available:
+            progress_bar = self.tqdm(
+                total=total_iterations,
+                desc="Processing samples",
+                unit="samples",
+                disable=False
+            )
+        else:
+            progress_bar = None
+        
         with torch.no_grad():
             for batch_idx, (data, target) in enumerate(dataloader):
                 batch_start = time.time()
@@ -216,14 +277,24 @@ class BenchmarkRunner:
                 
                 self.total_samples += len(data)
                 
-                # 进度显示
-                if batch_idx % 10 == 0:
+                # 更新进度条信息
+                if self.tqdm_available and progress_bar:
                     fps = 1000.0 / (batch_time / len(data)) if batch_time > 0 else 0
-                    self._print_progress(fps)
+                    progress_bar.set_postfix({'FPS': f'{fps:.1f}'})
+                    progress_bar.update(len(data))
+                else:
+                    # 传统进度显示（减少频率）
+                    if batch_idx % 50 == 0:
+                        fps = 1000.0 / (batch_time / len(data)) if batch_time > 0 else 0
+                        self._print_progress(fps)
                 
                 # 检查是否达到目标样本数
                 if self._should_stop_testing():
                     break
+        
+        # 关闭进度条
+        if self.tqdm_available and progress_bar:
+            progress_bar.close()
         
         self.logger.info(f"分割模型基准测试完成，总计处理 {self.total_samples} 个样本")
         
@@ -244,7 +315,18 @@ class BenchmarkRunner:
         postprocessing_times = []
         rendering_times = []
         
-        for i in range(num_test_images):
+        # 使用 tqdm 或传统进度显示
+        if self.tqdm_available:
+            progress_bar = self.tqdm(
+                range(num_test_images),
+                desc="Processing images",
+                unit="images",
+                disable=False
+            )
+        else:
+            progress_bar = range(num_test_images)
+        
+        for i in progress_bar:
             # 创建随机图像进行测试
             img = np.random.randint(0, 255, (640, 640, 3), dtype=np.uint8)
             
@@ -290,12 +372,21 @@ class BenchmarkRunner:
             
             self.total_samples += 1
             
-            # 进度显示
-            if i % 10 == 0 or i == num_test_images - 1:
+            # 更新进度条信息
+            if self.tqdm_available:
                 fps = 1000.0 / total_time if total_time > 0 else 0
-                progress = ((i + 1) / num_test_images) * 100
-                self.logger.info(f"YOLO检测进度: {i + 1}/{num_test_images} 图像 ({progress:.1f}%), 当前FPS: {fps:.1f}")
-                print(f"Processed {i + 1}/{num_test_images} images ({progress:.1f}%)... 当前FPS: {fps:.1f}")
+                progress_bar.set_postfix({'FPS': f'{fps:.1f}'})
+            else:
+                # 传统进度显示（减少频率）
+                if i % 50 == 0 or i == num_test_images - 1:
+                    fps = 1000.0 / total_time if total_time > 0 else 0
+                    progress = ((i + 1) / num_test_images) * 100
+                    self.logger.info(f"YOLO检测进度: {i + 1}/{num_test_images} 图像 ({progress:.1f}%), 当前FPS: {fps:.1f}")
+                    print(f"Processed {i + 1}/{num_test_images} images ({progress:.1f}%)... 当前FPS: {fps:.1f}")
+        
+        # 关闭进度条
+        if self.tqdm_available:
+            progress_bar.close()
         
         return {
             'preprocessing_times': preprocessing_times,
@@ -314,6 +405,24 @@ class BenchmarkRunner:
         rendering_times = []
         
         self.model.eval()
+        
+        # 计算总迭代次数
+        if self.test_samples == -1:
+            total_iterations = len(dataloader)
+        else:
+            total_iterations = min(num_test_images, self.test_samples)
+        
+        # 使用 tqdm 或传统进度显示
+        if self.tqdm_available:
+            progress_bar = self.tqdm(
+                total=total_iterations,
+                desc="Processing images",
+                unit="images",
+                disable=False
+            )
+        else:
+            progress_bar = None
+        
         with torch.no_grad():
             for batch_idx, (data, target) in enumerate(dataloader):
                 # 预处理时间
@@ -373,16 +482,26 @@ class BenchmarkRunner:
                 
                 self.total_samples += 1
                 
-                # 进度显示
-                if batch_idx % 10 == 0:
+                # 更新进度条信息
+                if self.tqdm_available and progress_bar:
                     fps = 1000.0 / total_time if total_time > 0 else 0
-                    progress = (self.total_samples / num_test_images) * 100
-                    self.logger.info(f"Torchvision检测进度: {self.total_samples}/{num_test_images} 图像 ({progress:.1f}%), 当前FPS: {fps:.1f}")
-                    print(f"Processed {self.total_samples}/{num_test_images} images ({progress:.1f}%)... 当前FPS: {fps:.1f}")
+                    progress_bar.set_postfix({'FPS': f'{fps:.1f}'})
+                    progress_bar.update(1)
+                else:
+                    # 传统进度显示（减少频率）
+                    if batch_idx % 50 == 0:
+                        fps = 1000.0 / total_time if total_time > 0 else 0
+                        progress = (self.total_samples / num_test_images) * 100
+                        self.logger.info(f"Torchvision检测进度: {self.total_samples}/{num_test_images} 图像 ({progress:.1f}%), 当前FPS: {fps:.1f}")
+                        print(f"Processed {self.total_samples}/{num_test_images} images ({progress:.1f}%)... 当前FPS: {fps:.1f}")
                 
                 # 限制测试样本数
                 if self.test_samples != -1 and self.total_samples >= self.test_samples:
                     break
+        
+        # 关闭进度条
+        if self.tqdm_available and progress_bar:
+            progress_bar.close()
         
         return {
             'preprocessing_times': preprocessing_times,
@@ -448,7 +567,7 @@ class BenchmarkRunner:
                 return min(self.test_samples, dataset_size)
     
     def _print_progress(self, fps):
-        """打印进度信息"""
+        """打印进度信息（仅在没有tqdm时使用）"""
         if self.test_samples == -1:
             self.logger.info(f"处理进度: {self.total_samples} 样本, 当前FPS: {fps:.1f}")
             print(f"Processed {self.total_samples} samples... 当前FPS: {fps:.1f}")
@@ -461,6 +580,7 @@ class BenchmarkRunner:
         """检查是否应该停止测试"""
         if self.test_samples != -1 and self.total_samples >= self.test_samples:
             self.logger.info(f"达到目标样本数 {self.test_samples}，测试完成")
-            print(f"达到目标样本数 {self.test_samples}，测试完成")
+            if not self.tqdm_available:
+                print(f"达到目标样本数 {self.test_samples}，测试完成")
             return True
         return False

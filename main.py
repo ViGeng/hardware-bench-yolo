@@ -71,7 +71,12 @@ class BenchmarkManager:
         self.cli_interface = CommandLineInterface(self.dependencies)
         
         # 初始化其他组件
-        self.resource_monitor = ResourceMonitor()
+        monitor_config = getattr(self, 'monitor_config', {})
+        self.resource_monitor = ResourceMonitor(
+            enable_gpu_monitoring=not monitor_config.get('disable_gpu_monitor', False),
+            sample_interval=monitor_config.get('monitor_interval', 0.1),
+            max_samples=monitor_config.get('monitor_samples', 1000)
+        )
         self.stats_calculator = StatisticsCalculator()
         
         # 基准测试相关对象
@@ -89,6 +94,48 @@ class BenchmarkManager:
         
         self.logger.info("基准测试工具初始化完成")
     
+    def _run_monitor_accuracy_test(self, args):
+        """运行监控准度测试"""
+        print("🔍 MONITORING SYSTEM ACCURACY TEST")
+        print("="*50)
+        
+        try:
+            from monitoring import MonitoringOverheadAnalyzer
+            
+            analyzer = MonitoringOverheadAnalyzer()
+            
+            # 使用命令行参数
+            duration = 10.0  # 固定测试时长
+            sample_interval = args.monitor_interval
+            
+            print(f"测试配置:")
+            print(f"  测试时长: {duration}秒")
+            print(f"  采样间隔: {sample_interval}秒")
+            print(f"  GPU监控: {'禁用' if args.disable_gpu_monitor else '启用'}")
+            print()
+            
+            overhead_stats = analyzer.measure_monitoring_overhead(
+                duration=duration,
+                sample_interval=sample_interval
+            )
+            
+            if overhead_stats:
+                analyzer.print_overhead_analysis(overhead_stats)
+                
+                # 在静默模式下只显示关键指标
+                if args.quiet:
+                    print(f"RESULT: {overhead_stats['overhead']['relative_percent']:.2f}% overhead")
+            else:
+                print("❌ 监控准度测试失败")
+                
+        except ImportError as e:
+            print(f"❌ 导入错误: {e}")
+            print("请确保 monitoring.py 文件包含 MonitoringOverheadAnalyzer 类")
+        except Exception as e:
+            print(f"❌ 测试失败: {e}")
+            import traceback
+            traceback.print_exc()
+    
     def run(self):
         """运行主程序"""
         try:
@@ -103,6 +150,10 @@ class BenchmarkManager:
             
             if args.list_datasets:
                 self.cli_interface.list_available_datasets()
+                return
+            
+            if args.test_monitor_accuracy:
+                self._run_monitor_accuracy_test(args)
                 return
             
             # 判断使用交互模式还是命令行模式
@@ -136,6 +187,8 @@ class BenchmarkManager:
             return
         
         self.configuration = self.interactive_interface.get_configuration()
+        # 在交互模式下，使用默认的results目录
+        self.configuration['output_dir'] = './results'
         self.cli_mode = False
         
         # 运行基准测试
@@ -158,10 +211,26 @@ class BenchmarkManager:
         self.configuration = self.cli_interface.args_to_config(args)
         self.cli_mode = True
         
-        # 创建输出目录
-        if not os.path.exists(self.configuration['output_dir']):
-            os.makedirs(self.configuration['output_dir'])
-            
+        # 设置监控配置
+        self.monitor_config = {
+            'disable_gpu_monitor': args.disable_gpu_monitor,
+            'monitor_interval': args.monitor_interval,
+            'monitor_samples': args.monitor_samples
+        }
+        
+        # 确保输出目录存在 - 使用绝对路径
+        output_dir = os.path.abspath(self.configuration['output_dir'])
+        self.configuration['output_dir'] = output_dir
+        
+        if not os.path.exists(output_dir):
+            try:
+                os.makedirs(output_dir)
+                self.logger.info(f"创建输出目录: {output_dir}")
+            except Exception as e:
+                self.logger.error(f"无法创建输出目录 {output_dir}: {e}")
+                print(f"错误：无法创建输出目录 {output_dir}: {e}")
+                sys.exit(1)
+        
         # 打印配置摘要
         self.cli_interface.print_config_summary(self.configuration)
         
@@ -170,32 +239,46 @@ class BenchmarkManager:
     
     def _run_benchmark_pipeline(self):
         """运行基准测试流程"""
-        # 初始化组件
-        self._initialize_components()
-        
-        # 加载数据集
-        self._load_dataset()
-        
-        # 加载模型
-        self._load_model()
-        
-        # 运行基准测试
-        self._run_benchmark()
+        try:
+            # 初始化组件
+            self._initialize_components()
+            
+            # 加载数据集
+            self._load_dataset()
+            
+            # 加载模型
+            self._load_model()
+            
+            # 运行基准测试
+            self._run_benchmark()
+            
+        except Exception as e:
+            self.logger.error(f"基准测试流程执行失败: {e}")
+            print(f"基准测试流程执行失败: {e}")
+            import traceback
+            traceback.print_exc()
+            raise e
     
     def _initialize_components(self):
         """初始化各个组件"""
         self.logger.info("初始化各个组件")
         
-        # 初始化数据集加载器
-        self.dataset_loader = DatasetLoader(self.configuration['test_samples'])
-        
-        # 初始化模型加载器
-        self.model_loader = ModelLoader(self.configuration['device'])
-        
-        # 初始化渲染引擎
-        self.rendering_engine = RenderingEngine(self.logger)
-        
-        self.logger.info("组件初始化完成")
+        try:
+            # 初始化数据集加载器
+            self.dataset_loader = DatasetLoader(self.configuration['test_samples'])
+            
+            # 初始化模型加载器
+            self.model_loader = ModelLoader(self.configuration['device'])
+            
+            # 初始化渲染引擎
+            self.rendering_engine = RenderingEngine(self.logger)
+            
+            self.logger.info("组件初始化完成")
+            
+        except Exception as e:
+            self.logger.error(f"组件初始化失败: {e}")
+            print(f"组件初始化失败: {e}")
+            raise e
     
     def _load_dataset(self):
         """加载数据集"""
@@ -336,39 +419,43 @@ class BenchmarkManager:
         self.logger.info("开始保存结果和生成可视化")
         
         try:
-            # 创建结果导出器
-            exporter = ResultExporter(self.benchmark_runner.detailed_results)
+            # 确定输出目录
+            output_dir = self.configuration.get('output_dir', './results')
             
-            # 保存CSV结果到指定目录
-            if self.cli_mode and 'output_dir' in self.configuration:
-                # 在命令行模式下，保存到指定目录
-                original_dir = os.getcwd()
-                os.chdir(self.configuration['output_dir'])
+            # 确保输出目录存在
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
+                self.logger.info(f"创建输出目录: {output_dir}")
             
+            # 创建结果导出器，传入正确的输出目录
+            exporter = ResultExporter(
+                detailed_results=self.benchmark_runner.detailed_results,
+                results_dir=output_dir
+            )
+            
+            # 保存CSV结果
+            self.logger.info(f"保存CSV结果到目录: {output_dir}")
             csv_filenames = exporter.save_detailed_csv_results(stats, self.configuration['model_type'])
             
             # 创建可视化（如果不是禁用状态）
             plot_files = []
             if not self.configuration.get('no_plots', False):
-                visualizer = Visualizer(self.benchmark_runner.detailed_results)
+                self.logger.info(f"生成可视化图表到目录: {output_dir}")
+                visualizer = Visualizer(
+                    detailed_results=self.benchmark_runner.detailed_results,
+                    results_dir=output_dir
+                )
                 plot_files = visualizer.create_visualizations(stats, self.configuration['model_type'])
-            
-            # 恢复原目录（如果改变了的话）
-            if self.cli_mode and 'output_dir' in self.configuration:
-                os.chdir(original_dir)
-                # 更新文件路径为绝对路径
-                output_dir = os.path.abspath(self.configuration['output_dir'])
-                csv_filenames = [os.path.join(output_dir, os.path.basename(f)) for f in csv_filenames]
-                plot_files = [os.path.join(output_dir, os.path.basename(f)) for f in plot_files]
             
             # 打印最终结果文件信息
             if not self.configuration.get('quiet', False):
                 print(f"\n[{time.strftime('%Y-%m-%d %H:%M:%S')}] 测试完成!")
-                if self.cli_mode:
-                    print(f"结果保存在: {self.configuration['output_dir']}")
+                print(f"结果保存在: {output_dir}")
                 print(f"日志文件: {self.log_filename}")
-                print(f"详细结果文件: {csv_filenames[0]}")
-                print(f"汇总结果文件: {csv_filenames[1]}")
+                if csv_filenames:
+                    print(f"详细结果文件: {csv_filenames[0]}")
+                    if len(csv_filenames) > 1:
+                        print(f"汇总结果文件: {csv_filenames[1]}")
                 
                 if plot_files:
                     print("生成的图表文件:")
@@ -384,13 +471,15 @@ class BenchmarkManager:
             
             # 在命令行模式下，提供简洁的成功信息
             if self.cli_mode and self.configuration.get('quiet', False):
-                print(f"SUCCESS: Results saved to {self.configuration['output_dir']}")
+                print(f"SUCCESS: Results saved to {output_dir}")
                 print(f"Throughput: {stats['performance']['throughput']:.2f} samples/sec")
-                print(f"Rating: {stats['performance'].get('rating', 'N/A')}")
             
         except Exception as e:
             self.logger.error(f"保存结果时出错: {e}")
             print(f"保存结果时出错: {e}")
+            import traceback
+            traceback.print_exc()
+            raise e
 
 def main():
     """主函数入口"""

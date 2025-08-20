@@ -1,22 +1,30 @@
-# 核心深度学习库
-torch>=1.12.0
-torchvision>=0.13.0
+# Core dependencies - required for basic functionality
+torch>=1.9.0
+torchvision>=0.10.0
+numpy>=1.21.0
+matplotlib>=3.3.0
+seaborn>=0.11.0
+psutil>=5.8.0
+
+# Optional dependencies for enhanced functionality
+# Classification models
 timm>=0.6.0
 
-# 数据处理和科学计算
-numpy>=1.21.0
-pandas>=1.3.0
-
-# 可视化
-matplotlib>=3.5.0
-seaborn>=0.11.0
-
-# 系统监控
-psutil>=5.8.0
-nvidia-ml-py3>=7.352.0
-
-# 目标检测（可选）
+# Object detection models
 ultralytics>=8.0.0
 
-# 其他工具
-Pillow>=8.3.0
+# Semantic segmentation models
+segmentation-models-pytorch>=0.3.0
+
+# GPU monitoring (optional but recommended for GPU users)
+nvidia-ml-py3>=7.352.0
+
+# Image processing
+Pillow>=8.0.0
+opencv-python>=4.5.0
+
+# Progress bars (optional but improves user experience)
+tqdm>=4.62.0
+
+# Additional utilities
+pathlib2>=2.3.0; python_version < "3.4"

@@ -6,6 +6,7 @@
 import os
 import logging
 import time
+import random
 from pathlib import Path
 import numpy as np
 import torch
@@ -19,6 +20,21 @@ try:
     PIL_AVAILABLE = True
 except ImportError:
     PIL_AVAILABLE = False
+
+class InfiniteRandomDataset(Dataset):
+    """无限随机采样数据集包装器"""
+    def __init__(self, original_dataset, target_length):
+        self.original_dataset = original_dataset
+        self.target_length = target_length
+        self.original_length = len(original_dataset)
+        
+    def __len__(self):
+        return self.target_length
+    
+    def __getitem__(self, idx):
+        # 随机从原始数据集中选择一个样本
+        random_idx = random.randint(0, self.original_length - 1)
+        return self.original_dataset[random_idx]
 
 class KITTIDataset(Dataset):
     """KITTI数据集类"""
@@ -193,6 +209,25 @@ class DatasetLoader:
         self.test_samples = test_samples
         self.logger = logging.getLogger(__name__)
     
+    def _create_infinite_dataloader_if_needed(self, dataset, batch_size=1, shuffle=False):
+        """如果需要的话，创建无限数据加载器"""
+        dataset_size = len(dataset)
+        
+        # 如果测试样本数大于数据集大小，使用无限随机采样
+        if self.test_samples != -1 and self.test_samples > dataset_size:
+            self.logger.info(f"测试样本数 ({self.test_samples}) 大于数据集大小 ({dataset_size})，使用随机重复采样")
+            print(f"测试样本数 ({self.test_samples}) 大于数据集大小 ({dataset_size})")
+            print("将使用随机重复采样来达到目标样本数")
+            
+            # 使用无限随机数据集包装器
+            infinite_dataset = InfiniteRandomDataset(dataset, self.test_samples)
+            dataloader = DataLoader(infinite_dataset, batch_size=batch_size, shuffle=shuffle)
+        else:
+            # 正常情况下使用标准数据加载器
+            dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+        
+        return dataloader
+    
     def load_mnist(self):
         """加载MNIST数据集 - 修复通道数问题"""
         self.logger.info("开始加载MNIST数据集")
@@ -210,7 +245,8 @@ class DatasetLoader:
         dataset = torchvision.datasets.MNIST(
             root='./data', train=False, download=True, transform=transform
         )
-        dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
+        
+        dataloader = self._create_infinite_dataloader_if_needed(dataset, batch_size=1, shuffle=True)
         
         self.logger.info(f"MNIST数据集加载完成，共{len(dataset)}个样本")
         print(f"MNIST数据集加载完成，共{len(dataset)}个样本")
@@ -233,7 +269,8 @@ class DatasetLoader:
         dataset = torchvision.datasets.CIFAR10(
             root='./data', train=False, download=True, transform=transform
         )
-        dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
+        
+        dataloader = self._create_infinite_dataloader_if_needed(dataset, batch_size=1, shuffle=True)
         
         self.logger.info(f"CIFAR-10数据集加载完成，共{len(dataset)}个样本")
         print(f"CIFAR-10数据集加载完成，共{len(dataset)}个样本")
@@ -257,7 +294,7 @@ class DatasetLoader:
             transform=transform
         )
         
-        dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
+        dataloader = self._create_infinite_dataloader_if_needed(dataset, batch_size=1, shuffle=True)
         
         self.logger.info(f"KITTI数据集加载完成，共{len(dataset)}个样本")
         print(f"KITTI数据集加载完成，共{len(dataset)}个样本")
@@ -297,7 +334,7 @@ class DatasetLoader:
             target_transform=target_transform
         )
         
-        dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
+        dataloader = self._create_infinite_dataloader_if_needed(dataset, batch_size=1, shuffle=True)
         
         self.logger.info(f"Cityscapes数据集加载完成，共{len(dataset)}个样本")
         print(f"Cityscapes数据集加载完成，共{len(dataset)}个样本")
@@ -315,7 +352,7 @@ class DatasetLoader:
         print(f"创建合成分类数据集 ({img_size}x{img_size}, {num_classes}类, {dataset_size}个样本)...")
         
         dataset = SyntheticDataset(dataset_size, img_size, num_classes)
-        dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
+        dataloader = self._create_infinite_dataloader_if_needed(dataset, batch_size=1, shuffle=True)
         
         self.logger.info("合成分类数据集创建完成")
         print("合成分类数据集创建完成")
@@ -333,7 +370,7 @@ class DatasetLoader:
         print(f"创建合成检测数据集 ({num_images}张测试图像)")
         
         dataset = SyntheticDetectionDataset(num_images)
-        dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
+        dataloader = self._create_infinite_dataloader_if_needed(dataset, batch_size=1, shuffle=True)
         
         # 生成测试图像路径列表（用于兼容性）
         test_images = [f"synthetic_test_img_{i:06d}.jpg" for i in range(num_images)]
@@ -354,7 +391,7 @@ class DatasetLoader:
         print(f"创建合成分割数据集 (512x1024, 19类, {dataset_size}个样本)")
         
         dataset = SyntheticSegmentationDataset(dataset_size)
-        dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
+        dataloader = self._create_infinite_dataloader_if_needed(dataset, batch_size=1, shuffle=True)
         
         self.logger.info("合成分割数据集创建完成")
         print("合成分割数据集创建完成")

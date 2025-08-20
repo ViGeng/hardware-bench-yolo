@@ -17,131 +17,175 @@ dependencies = check_dependencies()
 class ResultExporter:
     """结果导出器"""
     
-    def __init__(self, detailed_results=None):
+    def __init__(self, detailed_results=None, results_dir=None):
         self.detailed_results = detailed_results or []
         self.logger = logging.getLogger(__name__)
+        
+        # 使用指定的目录或默认的results目录
+        self.results_dir = results_dir or "results"
+        
+        # 确保输出目录存在
+        if not os.path.exists(self.results_dir):
+            os.makedirs(self.results_dir)
+            self.logger.info(f"创建输出目录: {self.results_dir}")
     
     def save_detailed_csv_results(self, stats, model_type):
         """保存详细的CSV结果"""
-        timestamp = time.strftime("%Y%m%d_%H%M%S")
-        hostname = socket.gethostname()
+        self.logger.info(f"开始保存详细CSV结果到目录: {self.results_dir}")
         
-        self.logger.info("开始保存详细CSV结果")
+        # 生成带时间戳的文件名
+        timestamp = time.strftime('%Y%m%d_%H%M%S')
         
         # 详细结果文件
-        detailed_filename = f"{hostname}_{model_type}_detailed_{timestamp}.csv"
+        detailed_filename = os.path.join(self.results_dir, f"{model_type}_detailed_{timestamp}.csv")
         
-        with open(detailed_filename, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.writer(f)
+        try:
+            with open(detailed_filename, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                
+                # 写入表头
+                if model_type == 'detection':
+                    header = ['Image_ID', 'Preprocessing_Time_ms', 'Inference_Time_ms', 'Postprocessing_Time_ms', 'Rendering_Time_ms', 'Total_Time_ms']
+                elif model_type == 'segmentation':
+                    header = ['Sample_ID', 'Preprocessing_Time_ms', 'Inference_Time_ms', 'Postprocessing_Time_ms', 'Rendering_Time_ms', 'Total_Time_ms']
+                else:
+                    header = ['Sample_ID', 'Preprocessing_Time_ms', 'Inference_Time_ms', 'Postprocessing_Time_ms', 'Rendering_Time_ms', 'Total_Time_ms']
+                
+                writer.writerow(header)
+                
+                # 写入详细数据
+                for result in self.detailed_results:
+                    writer.writerow([
+                        result['sample_id'],
+                        f"{result['preprocessing_time']:.4f}",
+                        f"{result['inference_time']:.4f}",
+                        f"{result['postprocessing_time']:.4f}",
+                        f"{result['rendering_time']:.4f}",
+                        f"{result['total_time']:.4f}"
+                    ])
             
-            # 写入表头
-            if model_type == 'detection':
-                header = ['Image_ID', 'Preprocessing_Time_ms', 'Inference_Time_ms', 'Postprocessing_Time_ms', 'Rendering_Time_ms', 'Total_Time_ms']
-            elif model_type == 'segmentation':
-                header = ['Sample_ID', 'Preprocessing_Time_ms', 'Inference_Time_ms', 'Postprocessing_Time_ms', 'Rendering_Time_ms', 'Total_Time_ms']
-            else:
-                header = ['Sample_ID', 'Preprocessing_Time_ms', 'Inference_Time_ms', 'Postprocessing_Time_ms', 'Rendering_Time_ms', 'Total_Time_ms']
+            self.logger.info(f"详细结果已保存至: {detailed_filename}")
+            print(f"详细结果已保存至: {detailed_filename}")
             
-            writer.writerow(header)
-            
-            # 写入详细数据
-            for result in self.detailed_results:
-                writer.writerow([
-                    result['sample_id'],
-                    f"{result['preprocessing_time']:.4f}",
-                    f"{result['inference_time']:.4f}",
-                    f"{result['postprocessing_time']:.4f}",
-                    f"{result['rendering_time']:.4f}",
-                    f"{result['total_time']:.4f}"
-                ])
-        
-        self.logger.info(f"详细结果已保存至: {detailed_filename}")
-        print(f"\n详细结果已保存至: {detailed_filename}")
+        except Exception as e:
+            self.logger.error(f"保存详细结果文件失败: {e}")
+            raise e
         
         # 汇总统计文件
-        summary_filename = f"{hostname}_{model_type}_summary_{timestamp}.csv"
+        summary_filename = os.path.join(self.results_dir, f"{model_type}_summary_{timestamp}.csv")
         
-        with open(summary_filename, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.writer(f)
-            
-            # 系统信息部分
-            writer.writerow(['=== SYSTEM INFORMATION ==='])
-            writer.writerow(['Metric', 'Value', 'Unit'])
-            writer.writerow(['Hostname', stats['system_info']['hostname'], ''])
-            writer.writerow(['Model Type', stats['system_info']['model_type'], ''])
-            writer.writerow(['Model Name', stats['system_info']['model_name'], ''])
-            writer.writerow(['Dataset', stats['system_info']['dataset'], ''])
-            writer.writerow(['Device', stats['system_info']['device'], ''])
-            writer.writerow(['Device Name', stats['system_info']['device_name'], ''])
-            writer.writerow(['PyTorch Version', stats['system_info']['torch_version'], ''])
-            writer.writerow(['CUDA Available', stats['system_info']['cuda_available'], ''])
-            writer.writerow(['Test Start Time', time.strftime('%Y-%m-%d %H:%M:%S'), ''])
-            writer.writerow([])
-            
-            # 性能指标部分
-            writer.writerow(['=== PERFORMANCE METRICS ==='])
-            writer.writerow(['Metric', 'Value', 'Unit'])
-            writer.writerow(['Total Samples', stats['performance']['total_samples'], 'samples'])
-            writer.writerow(['Total Time', f"{stats['performance']['total_time']:.4f}", 'seconds'])
-            writer.writerow(['Throughput', f"{stats['performance']['throughput']:.4f}", 'samples/sec'])
-            writer.writerow(['Avg Time per Sample', f"{stats['performance']['avg_time_per_sample']:.4f}", 'ms'])
-            if 'rating' in stats['performance']:
-                writer.writerow(['Performance Rating', stats['performance']['rating'], ''])
-            writer.writerow([])
-            
-            # 时间分解部分
-            if stats['timing']:
-                writer.writerow(['=== TIMING BREAKDOWN ==='])
-                writer.writerow(['Stage', 'Min (ms)', 'Max (ms)', 'Avg (ms)', 'Std (ms)'])
-                for stage, data in stats['timing'].items():
-                    stage_name = stage.replace('_', ' ').title()
-                    writer.writerow([
-                        stage_name,
-                        f"{data['min']:.4f}",
-                        f"{data['max']:.4f}",
-                        f"{data['avg']:.4f}",
-                        f"{data['std']:.4f}"
-                    ])
+        try:
+            with open(summary_filename, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                
+                # 系统信息部分
+                writer.writerow(['=== SYSTEM INFORMATION ==='])
+                writer.writerow(['Metric', 'Value', 'Unit'])
+                writer.writerow(['Hostname', stats['system_info']['hostname'], ''])
+                writer.writerow(['Model Type', stats['system_info']['model_type'], ''])
+                writer.writerow(['Model Name', stats['system_info']['model_name'], ''])
+                writer.writerow(['Dataset', stats['system_info']['dataset'], ''])
+                writer.writerow(['Device', stats['system_info']['device'], ''])
+                writer.writerow(['Device Name', stats['system_info']['device_name'], ''])
+                writer.writerow(['PyTorch Version', stats['system_info']['torch_version'], ''])
+                writer.writerow(['CUDA Available', stats['system_info']['cuda_available'], ''])
+                writer.writerow(['Test Start Time', time.strftime('%Y-%m-%d %H:%M:%S'), ''])
                 writer.writerow([])
+                
+                # 性能指标部分
+                writer.writerow(['=== PERFORMANCE METRICS ==='])
+                writer.writerow(['Metric', 'Value', 'Unit'])
+                writer.writerow(['Total Samples', stats['performance']['total_samples'], 'samples'])
+                writer.writerow(['Total Time', f"{stats['performance']['total_time']:.4f}", 'seconds'])
+                writer.writerow(['Throughput', f"{stats['performance']['throughput']:.4f}", 'samples/sec'])
+                writer.writerow(['Avg Time per Sample', f"{stats['performance']['avg_time_per_sample']:.4f}", 'ms'])
+                if 'rating' in stats['performance']:
+                    writer.writerow(['Performance Rating', stats['performance']['rating'], ''])
+                writer.writerow([])
+                
+                # 时间分解部分
+                if stats['timing']:
+                    writer.writerow(['=== TIMING BREAKDOWN ==='])
+                    writer.writerow(['Stage', 'Min (ms)', 'Max (ms)', 'Avg (ms)', 'Std (ms)'])
+                    for stage, data in stats['timing'].items():
+                        stage_name = stage.replace('_', ' ').title()
+                        writer.writerow([
+                            stage_name,
+                            f"{data['min']:.4f}",
+                            f"{data['max']:.4f}",
+                            f"{data['avg']:.4f}",
+                            f"{data['std']:.4f}"
+                        ])
+                    writer.writerow([])
+                
+                # 资源使用部分
+                writer.writerow(['=== RESOURCE UTILIZATION ==='])
+                writer.writerow(['Resource', 'Min (%)', 'Max (%)', 'Avg (%)', 'Std (%)'])
+                writer.writerow(['CPU Usage', 
+                               f"{stats['resources']['cpu']['min']:.2f}", 
+                               f"{stats['resources']['cpu']['max']:.2f}", 
+                               f"{stats['resources']['cpu']['avg']:.2f}",
+                               f"{stats['resources']['cpu']['std']:.2f}"])
+                writer.writerow(['Memory Usage', 
+                               f"{stats['resources']['memory']['min']:.2f}", 
+                               f"{stats['resources']['memory']['max']:.2f}", 
+                               f"{stats['resources']['memory']['avg']:.2f}",
+                               f"{stats['resources']['memory']['std']:.2f}"])
+                
+                if 'gpu' in stats['resources']:
+                    writer.writerow(['GPU Memory', 
+                                   f"{stats['resources']['gpu']['memory']['min']:.2f}", 
+                                   f"{stats['resources']['gpu']['memory']['max']:.2f}", 
+                                   f"{stats['resources']['gpu']['memory']['avg']:.2f}",
+                                   f"{stats['resources']['gpu']['memory']['std']:.2f}"])
+                    writer.writerow(['GPU Utilization', 
+                                   f"{stats['resources']['gpu']['utilization']['min']:.2f}", 
+                                   f"{stats['resources']['gpu']['utilization']['max']:.2f}", 
+                                   f"{stats['resources']['gpu']['utilization']['avg']:.2f}",
+                                   f"{stats['resources']['gpu']['utilization']['std']:.2f}"])
             
-            # 资源使用部分
-            writer.writerow(['=== RESOURCE UTILIZATION ==='])
-            writer.writerow(['Resource', 'Min (%)', 'Max (%)', 'Avg (%)', 'Std (%)'])
-            writer.writerow(['CPU Usage', 
-                           f"{stats['resources']['cpu']['min']:.2f}", 
-                           f"{stats['resources']['cpu']['max']:.2f}", 
-                           f"{stats['resources']['cpu']['avg']:.2f}",
-                           f"{stats['resources']['cpu']['std']:.2f}"])
-            writer.writerow(['Memory Usage', 
-                           f"{stats['resources']['memory']['min']:.2f}", 
-                           f"{stats['resources']['memory']['max']:.2f}", 
-                           f"{stats['resources']['memory']['avg']:.2f}",
-                           f"{stats['resources']['memory']['std']:.2f}"])
+            self.logger.info(f"汇总结果已保存至: {summary_filename}")
+            print(f"汇总结果已保存至: {summary_filename}")
             
-            if 'gpu' in stats['resources']:
-                writer.writerow(['GPU Memory', 
-                               f"{stats['resources']['gpu']['memory']['min']:.2f}", 
-                               f"{stats['resources']['gpu']['memory']['max']:.2f}", 
-                               f"{stats['resources']['gpu']['memory']['avg']:.2f}",
-                               f"{stats['resources']['gpu']['memory']['std']:.2f}"])
-                writer.writerow(['GPU Utilization', 
-                               f"{stats['resources']['gpu']['utilization']['min']:.2f}", 
-                               f"{stats['resources']['gpu']['utilization']['max']:.2f}", 
-                               f"{stats['resources']['gpu']['utilization']['avg']:.2f}",
-                               f"{stats['resources']['gpu']['utilization']['std']:.2f}"])
+        except Exception as e:
+            self.logger.error(f"保存汇总结果文件失败: {e}")
+            raise e
         
-        self.logger.info(f"汇总结果已保存至: {summary_filename}")
-        print(f"汇总结果已保存至: {summary_filename}")
-        
-        return detailed_filename, summary_filename
+        return [detailed_filename, summary_filename]
 
 class Visualizer:
     """可视化生成器"""
     
-    def __init__(self, detailed_results=None):
+    def __init__(self, detailed_results=None, results_dir=None):
         self.detailed_results = detailed_results or []
         self.logger = logging.getLogger(__name__)
         self.matplotlib_available = dependencies['matplotlib']
+        
+        # 使用指定的目录或默认的results目录
+        self.results_dir = results_dir or "results"
+        
+        # 确保输出目录存在
+        if not os.path.exists(self.results_dir):
+            os.makedirs(self.results_dir)
+            self.logger.info(f"创建可视化输出目录: {self.results_dir}")
+    
+    def _calculate_moving_average(self, data, window_size):
+        """计算滑动窗口平均值"""
+        if len(data) < window_size:
+            # 如果数据量小于窗口大小，返回累积平均
+            return [np.mean(data[:i+1]) for i in range(len(data))]
+        
+        moving_avg = []
+        for i in range(len(data)):
+            if i < window_size - 1:
+                # 前面不足窗口大小的部分，使用从开始到当前位置的平均值
+                moving_avg.append(np.mean(data[:i+1]))
+            else:
+                # 使用滑动窗口平均
+                window_data = data[i-window_size+1:i+1]
+                moving_avg.append(np.mean(window_data))
+        
+        return moving_avg
     
     def create_visualizations(self, stats, model_type):
         """创建可视化图表"""
@@ -152,22 +196,21 @@ class Visualizer:
         
         try:
             import matplotlib.pyplot as plt
+            import matplotlib
+            matplotlib.use('Agg')  # 使用非交互式后端
             
-            self.logger.info("开始生成可视化图表")
+            self.logger.info(f"开始生成可视化图表到目录: {self.results_dir}")
             print("正在生成可视化图表...")
-            
-            timestamp = time.strftime("%Y%m%d_%H%M%S")
-            hostname = socket.gethostname()
             
             generated_plots = []
             
             # 生成详细时间折线图
-            timing_plot = self._create_detailed_timing_plot(stats, model_type, timestamp, hostname)
+            timing_plot = self._create_detailed_timing_plot(stats, model_type)
             if timing_plot:
                 generated_plots.append(timing_plot)
             
             # 生成性能总结图表
-            summary_plot = self._create_summary_plot(stats, model_type, timestamp, hostname)
+            summary_plot = self._create_summary_plot(stats, model_type)
             if summary_plot:
                 generated_plots.append(summary_plot)
             
@@ -182,7 +225,7 @@ class Visualizer:
             traceback.print_exc()
             return []
     
-    def _create_detailed_timing_plot(self, stats, model_type, timestamp, hostname):
+    def _create_detailed_timing_plot(self, stats, model_type):
         """创建详细的每帧速度分析折线图"""
         if not self.detailed_results or len(self.detailed_results) < 10:
             self.logger.warning("数据不足，跳过详细时间折线图生成")
@@ -207,9 +250,24 @@ class Visualizer:
             fps_total = [min(1000.0 / t, 10000) for t in total_times]
             fps_inference = [min(1000.0 / t, 10000) for t in inf_times]
             
-            # 计算平均值
+            # 计算全局平均值
             avg_fps_total = np.mean(fps_total)
             avg_fps_inference = np.mean(fps_inference)
+            
+            # 设置滑动窗口大小
+            data_length = len(fps_total)
+            if data_length >= 100:
+                window_size = 20  # 大数据集使用20个样本的窗口
+            elif data_length >= 50:
+                window_size = 10  # 中等数据集使用10个样本的窗口
+            else:
+                window_size = max(3, data_length // 5)  # 小数据集使用1/5数据量作为窗口，最少3个
+            
+            self.logger.info(f"使用滑动窗口大小: {window_size} (数据总量: {data_length})")
+            
+            # 计算滑动窗口平均
+            fps_total_ma = self._calculate_moving_average(fps_total, window_size)
+            fps_inference_ma = self._calculate_moving_average(fps_inference, window_size)
             
             # 创建图表
             fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16, 12))
@@ -218,22 +276,36 @@ class Visualizer:
             fig.suptitle(f'Per-Frame Speed Analysis: {model_name} on {dataset_name}', fontsize=16)
             
             # 上图：FPS性能图
-            ax1.plot(sample_ids, fps_total, label='Total FPS', color='blue', alpha=0.7, linewidth=1.5)
-            ax1.plot(sample_ids, fps_inference, label='Inference FPS', color='red', alpha=0.7, linewidth=1.5)
+            # 原始FPS数据（半透明）
+            ax1.plot(sample_ids, fps_total, label='Total FPS (Raw)', color='lightblue', alpha=0.5, linewidth=1)
+            ax1.plot(sample_ids, fps_inference, label='Inference FPS (Raw)', color='lightcoral', alpha=0.5, linewidth=1)
             
-            # 添加平均值线
-            ax1.axhline(y=avg_fps_total, color='blue', linestyle='--', alpha=0.8, linewidth=2, 
-                       label=f'Avg Total FPS: {avg_fps_total:.1f}')
-            ax1.axhline(y=avg_fps_inference, color='red', linestyle='--', alpha=0.8, linewidth=2,
-                       label=f'Avg Inference FPS: {avg_fps_inference:.1f}')
+            # 滑动窗口平均FPS（醒目）
+            ax1.plot(sample_ids, fps_total_ma, label=f'Total FPS (MA-{window_size})', color='blue', alpha=0.8, linewidth=2)
+            ax1.plot(sample_ids, fps_inference_ma, label=f'Inference FPS (MA-{window_size})', color='red', alpha=0.8, linewidth=2)
+            
+            # 添加全局平均值线
+            ax1.axhline(y=avg_fps_total, color='blue', linestyle='--', alpha=0.6, linewidth=1.5, 
+                       label=f'Global Avg Total FPS: {avg_fps_total:.1f}')
+            ax1.axhline(y=avg_fps_inference, color='red', linestyle='--', alpha=0.6, linewidth=1.5,
+                       label=f'Global Avg Inference FPS: {avg_fps_inference:.1f}')
+            
+            # 添加当前滑动窗口平均值（最后几个值的平均）
+            current_total_ma = np.mean(fps_total_ma[-window_size:]) if len(fps_total_ma) >= window_size else fps_total_ma[-1]
+            current_inf_ma = np.mean(fps_inference_ma[-window_size:]) if len(fps_inference_ma) >= window_size else fps_inference_ma[-1]
+            
+            ax1.axhline(y=current_total_ma, color='darkblue', linestyle=':', alpha=0.8, linewidth=2,
+                       label=f'Current MA Total FPS: {current_total_ma:.1f}')
+            ax1.axhline(y=current_inf_ma, color='darkred', linestyle=':', alpha=0.8, linewidth=2,
+                       label=f'Current MA Inference FPS: {current_inf_ma:.1f}')
             
             ax1.set_xlabel('Sample/Image ID')
             ax1.set_ylabel('FPS (Frames Per Second)')
-            ax1.set_title('Processing Speed per Frame')
-            ax1.legend()
+            ax1.set_title(f'Processing Speed per Frame (Moving Average Window: {window_size})')
+            ax1.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
             ax1.grid(True, alpha=0.3)
             
-            # 下图：时间分解堆叠图
+            # 下图：时间分解堆积图
             ax2.fill_between(sample_ids, 0, prep_times, label='Preprocessing', alpha=0.8, color='lightblue')
             current_height = prep_times
             
@@ -257,7 +329,8 @@ class Visualizer:
             plt.tight_layout()
             
             # 保存图表
-            timing_plot_filename = f"{hostname}_{model_type}_speed_analysis_{timestamp}.png"
+            timestamp = time.strftime('%Y%m%d_%H%M%S')
+            timing_plot_filename = os.path.join(self.results_dir, f"{model_type}_speed_analysis_{timestamp}.png")
             plt.savefig(timing_plot_filename, format='png', dpi=300, bbox_inches='tight')
             
             self.logger.info(f"详细速度分析图表已保存至: {timing_plot_filename}")
@@ -269,9 +342,11 @@ class Visualizer:
         except Exception as e:
             self.logger.error(f"创建详细速度折线图时出错: {e}")
             print(f"创建详细速度折线图时出错: {e}")
+            import traceback
+            traceback.print_exc()
             return None
     
-    def _create_summary_plot(self, stats, model_type, timestamp, hostname):
+    def _create_summary_plot(self, stats, model_type):
         """创建性能总结图表"""
         try:
             import matplotlib.pyplot as plt
@@ -383,7 +458,8 @@ Memory: {mem_avg:.1f}% ± {mem_std:.1f}%"""
             plt.tight_layout()
             
             # 保存总结图表
-            summary_plot_filename = f"{hostname}_{model_type}_summary_{timestamp}.png"
+            timestamp = time.strftime('%Y%m%d_%H%M%S')
+            summary_plot_filename = os.path.join(self.results_dir, f"{model_type}_summary_{timestamp}.png")
             plt.savefig(summary_plot_filename, format='png', dpi=300, bbox_inches='tight')
             
             self.logger.info(f"性能总结图表已保存至: {summary_plot_filename}")
@@ -395,4 +471,6 @@ Memory: {mem_avg:.1f}% ± {mem_std:.1f}%"""
         except Exception as e:
             self.logger.error(f"创建总结图表时出错: {e}")
             print(f"创建总结图表时出错: {e}")
+            import traceback
+            traceback.print_exc()
             return None
