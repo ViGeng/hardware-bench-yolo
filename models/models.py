@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 """
-模型模块 - 负责加载和管理各种深度学习模型
+Model module - responsible for loading and managing various deep learning models
 """
 
 import logging
 import time
 import torch
 import torchvision.models.detection as detection_models
-from config import DETECTION_MODELS, CLASSIFICATION_MODELS, SEGMENTATION_MODELS
-from utils import check_dependencies
+from core.config import DETECTION_MODELS, CLASSIFICATION_MODELS, SEGMENTATION_MODELS
+from core.utils import check_dependencies
 
-# 检查依赖
+# Check dependencies
 dependencies = check_dependencies()
 
 class ModelLoader:
-    """模型加载器类"""
+    """Model loader class"""
     
     def __init__(self, device='cpu'):
         self.device = device
@@ -22,8 +22,8 @@ class ModelLoader:
         self.dependencies = dependencies
     
     def load_classification_model(self, model_info):
-        """加载分类模型"""
-        self.logger.info(f"使用timm加载分类模型: {model_info['model']}")
+        """Load classification model"""
+        self.logger.info(f"Loading classification model using timm: {model_info['model']}")
         
         if not self.dependencies['timm']:
             raise ImportError("timm library not available. Install with: pip install timm")
@@ -38,11 +38,11 @@ class ModelLoader:
         model.eval()
         model = model.to(self.device)
         
-        self.logger.info(f"分类模型加载成功: {model_info['name']}")
+        self.logger.info(f"Classification model loaded successfully: {model_info['name']}")
         return model
     
     def load_detection_model(self, model_info):
-        """加载检测模型"""
+        """Load detection model"""
         if model_info['type'] == 'yolo':
             return self._load_yolo_model(model_info)
         elif model_info['type'] == 'torchvision':
@@ -51,27 +51,27 @@ class ModelLoader:
             raise ValueError(f"Unsupported detection model type: {model_info['type']}")
     
     def _load_yolo_model(self, model_info):
-        """加载YOLO模型"""
+        """Load YOLO model"""
         if not self.dependencies['ultralytics']:
             raise ImportError("ultralytics library not available. Install with: pip install ultralytics")
         
         from ultralytics import YOLO
         
-        self.logger.info(f"使用YOLO加载检测模型: {model_info['model']}")
+        self.logger.info(f"Loading detection model using YOLO: {model_info['model']}")
         
         model = YOLO(model_info['model'])
         
-        self.logger.info(f"YOLO模型加载成功: {model_info['name']}")
+        self.logger.info(f"YOLO model loaded successfully: {model_info['name']}")
         return model
     
     def _load_torchvision_detection_model(self, model_info):
-        """加载torchvision检测模型"""
+        """Load torchvision detection model"""
         if not self.dependencies['torchvision_detection']:
             raise ImportError("torchvision detection models not available")
         
-        self.logger.info(f"使用torchvision加载检测模型: {model_info['model']}")
+        self.logger.info(f"Loading detection model using torchvision: {model_info['model']}")
         
-        # 加载torchvision检测模型
+        # Load torchvision detection model
         if model_info['model'] == 'fasterrcnn_resnet50_fpn':
             model = detection_models.fasterrcnn_resnet50_fpn(weights='DEFAULT')
         elif model_info['model'] == 'fasterrcnn_mobilenet_v3_large_fpn':
@@ -84,36 +84,36 @@ class ModelLoader:
         model.eval()
         model = model.to(self.device)
         
-        self.logger.info(f"Torchvision检测模型加载成功: {model_info['name']}")
+        self.logger.info(f"Torchvision detection model loaded successfully: {model_info['name']}")
         return model
     
     def load_segmentation_model(self, model_info):
-        """加载分割模型"""
+        """Load segmentation model"""
         if not self.dependencies['smp']:
             raise ImportError("segmentation_models_pytorch not available. Install with: pip install segmentation-models-pytorch")
         
         import segmentation_models_pytorch as smp
         
-        self.logger.info(f"使用segmentation_models_pytorch加载分割模型: {model_info['model']}")
+        self.logger.info(f"Loading segmentation model using segmentation_models_pytorch: {model_info['model']}")
         
-        # 使用segmentation_models_pytorch创建模型
+        # Create model using segmentation_models_pytorch
         model_class = getattr(smp, model_info['model'])
         model = model_class(
             encoder_name=model_info['encoder'],
             encoder_weights='imagenet',
-            classes=19,  # Cityscapes有19个类别
+            classes=19,  # Cityscapes has 19 classes
             activation=None
         )
         model.eval()
         model = model.to(self.device)
         
-        self.logger.info(f"分割模型加载成功: {model_info['name']}")
+        self.logger.info(f"Segmentation model loaded successfully: {model_info['name']}")
         return model
     
     def load_model(self, model_type, model_info):
-        """根据模型类型加载相应模型"""
-        self.logger.info(f"开始加载模型: {model_info['name']}")
-        print(f"\n正在加载模型: {model_info['name']}...")
+        """Load corresponding model based on model type"""
+        self.logger.info(f"Starting to load model: {model_info['name']}")
+        print(f"\nLoading model: {model_info['name']}...")
         
         try:
             if model_type == 'classification':
@@ -125,20 +125,20 @@ class ModelLoader:
             else:
                 raise ValueError(f"Unsupported model type: {model_type}")
             
-            self.logger.info(f"模型加载成功: {model_info['name']}")
-            print("模型加载成功!")
+            self.logger.info(f"Model loaded successfully: {model_info['name']}")
+            print("Model loaded successfully!")
             
             return model
             
         except Exception as e:
-            self.logger.error(f"模型加载失败: {e}")
-            print(f"模型加载失败: {e}")
+            self.logger.error(f"Model loading failed: {e}")
+            print(f"Model loading failed: {e}")
             import traceback
             traceback.print_exc()
             raise e
 
 def get_available_models(model_type, dependencies):
-    """获取可用的模型列表"""
+    """Get list of available models"""
     if model_type == 'classification':
         if dependencies['timm']:
             return CLASSIFICATION_MODELS
@@ -163,7 +163,7 @@ def get_available_models(model_type, dependencies):
     return {}
 
 def validate_model_availability(model_type, dependencies):
-    """验证模型类型是否可用"""
+    """Validate if model type is available"""
     if model_type == 'classification':
         return dependencies['timm']
     elif model_type == 'detection':

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-配置模块 - 存储所有可用模型、数据集和系统配置
+Configuration module - stores all available models, datasets and system configurations
 """
 
-# 检测模型配置
+# Detection model configurations
 DETECTION_MODELS = {
     '1': {'name': 'YOLOv8n', 'model': 'yolov8n.pt', 'type': 'yolo'},
     '2': {'name': 'YOLOv8s', 'model': 'yolov8s.pt', 'type': 'yolo'},
@@ -13,7 +13,7 @@ DETECTION_MODELS = {
     '6': {'name': 'FCOS ResNet50', 'model': 'fcos_resnet50_fpn', 'type': 'torchvision'},
 }
 
-# 分类模型配置
+# Classification model configurations
 CLASSIFICATION_MODELS = {
     '1': {'name': 'ResNet18', 'model': 'resnet18', 'type': 'timm'},
     '2': {'name': 'ResNet50', 'model': 'resnet50', 'type': 'timm'},
@@ -23,7 +23,7 @@ CLASSIFICATION_MODELS = {
     '6': {'name': 'MobileNet-V3', 'model': 'mobilenetv3_large_100', 'type': 'timm'},
 }
 
-# 分割模型配置
+# Segmentation model configurations
 SEGMENTATION_MODELS = {
     '1': {'name': 'DeepLabV3+ ResNet50', 'model': 'DeepLabV3Plus', 'encoder': 'resnet50', 'type': 'smp'},
     '2': {'name': 'DeepLabV3+ EfficientNet-B0', 'model': 'DeepLabV3Plus', 'encoder': 'efficientnet-b0', 'type': 'smp'},
@@ -33,7 +33,7 @@ SEGMENTATION_MODELS = {
     '6': {'name': 'FPN ResNet50', 'model': 'FPN', 'encoder': 'resnet50', 'type': 'smp'},
 }
 
-# 类别标签配置
+# Class label configurations
 COCO_CLASSES = [
     'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck',
     'boat', 'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench',
@@ -60,13 +60,13 @@ CITYSCAPES_CLASSES = [
     'truck', 'bus', 'train', 'motorcycle', 'bicycle'
 ]
 
-# 检测用颜色配置
+# Detection color configurations
 DETECTION_COLORS = [
     (255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255),
     (0, 255, 255), (128, 0, 0), (0, 128, 0), (0, 0, 128), (128, 128, 0)
 ]
 
-# 分割颜色映射
+# Segmentation color mapping
 CITYSCAPES_COLOR_MAP = [
     [128, 64, 128],   # road
     [244, 35, 232],   # sidewalk
@@ -89,12 +89,12 @@ CITYSCAPES_COLOR_MAP = [
     [119, 11, 32]     # bicycle
 ]
 
-# 样本数量选项
+# Sample count options
 SAMPLE_OPTIONS = {
-    '1': {'name': '快速测试', 'count': 100},
-    '2': {'name': '中等测试', 'count': 500},
-    '3': {'name': '标准测试', 'count': 1000},
-    '4': {'name': '大规模测试', 'count': 5000},
-    '5': {'name': '全部样本', 'count': -1},
-    '6': {'name': '自定义数量', 'count': 'custom'}
+    '1': {'name': 'Quick Test', 'count': 100},
+    '2': {'name': 'Medium Test', 'count': 500},
+    '3': {'name': 'Standard Test', 'count': 1000},
+    '4': {'name': 'Large Scale Test', 'count': 5000},
+    '5': {'name': 'All Samples', 'count': -1},
+    '6': {'name': 'Custom Count', 'count': 'custom'}
 }
