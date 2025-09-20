@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-输出模块 - 负责结果保存和可视化生成
+Output module - responsible for result saving and visualization generation
 """
 
 import os
@@ -9,41 +9,41 @@ import time
 import socket
 import logging
 import numpy as np
-from utils import check_dependencies
+from hardware_benchmark.core.utils import check_dependencies
 
-# 检查依赖
+# Check dependencies
 dependencies = check_dependencies()
 
 class ResultExporter:
-    """结果导出器"""
+    """Result exporter"""
     
     def __init__(self, detailed_results=None, results_dir=None):
         self.detailed_results = detailed_results or []
         self.logger = logging.getLogger(__name__)
         
-        # 使用指定的目录或默认的results目录
+        # Use specified directory or default results directory
         self.results_dir = results_dir or "results"
         
-        # 确保输出目录存在
+        # Ensure output directory exists
         if not os.path.exists(self.results_dir):
             os.makedirs(self.results_dir)
-            self.logger.info(f"创建输出目录: {self.results_dir}")
+            self.logger.info(f"Created output directory: {self.results_dir}")
     
     def save_detailed_csv_results(self, stats, model_type):
-        """保存详细的CSV结果"""
-        self.logger.info(f"开始保存详细CSV结果到目录: {self.results_dir}")
+        """Save detailed CSV results"""
+        self.logger.info(f"Starting to save CSV result files to directory: {self.results_dir}")
         
-        # 生成带时间戳的文件名
+        # Generate timestamped filename
         timestamp = time.strftime('%Y%m%d_%H%M%S')
         
-        # 详细结果文件
+        # First CSV file: detailed results file (detailed timing data for each sample)
         detailed_filename = os.path.join(self.results_dir, f"{model_type}_detailed_{timestamp}.csv")
         
         try:
             with open(detailed_filename, 'w', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
                 
-                # 写入表头
+                # Write header
                 if model_type == 'detection':
                     header = ['Image_ID', 'Preprocessing_Time_ms', 'Inference_Time_ms', 'Postprocessing_Time_ms', 'Rendering_Time_ms', 'Total_Time_ms']
                 elif model_type == 'segmentation':
@@ -53,7 +53,7 @@ class ResultExporter:
                 
                 writer.writerow(header)
                 
-                # 写入详细数据
+                # Write detailed data
                 for result in self.detailed_results:
                     writer.writerow([
                         result['sample_id'],
@@ -64,21 +64,20 @@ class ResultExporter:
                         f"{result['total_time']:.4f}"
                     ])
             
-            self.logger.info(f"详细结果已保存至: {detailed_filename}")
-            print(f"详细结果已保存至: {detailed_filename}")
+            print(f"Detailed timing data CSV file saved to: {detailed_filename}")
             
         except Exception as e:
-            self.logger.error(f"保存详细结果文件失败: {e}")
+            self.logger.error(f"Failed to save detailed timing data CSV file: {e}")
             raise e
         
-        # 汇总统计文件
+        # Second CSV file: summary statistics file (system information and performance statistics)
         summary_filename = os.path.join(self.results_dir, f"{model_type}_summary_{timestamp}.csv")
         
         try:
             with open(summary_filename, 'w', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
                 
-                # 系统信息部分
+                # System information section
                 writer.writerow(['=== SYSTEM INFORMATION ==='])
                 writer.writerow(['Metric', 'Value', 'Unit'])
                 writer.writerow(['Hostname', stats['system_info']['hostname'], ''])
@@ -92,7 +91,7 @@ class ResultExporter:
                 writer.writerow(['Test Start Time', time.strftime('%Y-%m-%d %H:%M:%S'), ''])
                 writer.writerow([])
                 
-                # 性能指标部分
+                # Performance metrics section
                 writer.writerow(['=== PERFORMANCE METRICS ==='])
                 writer.writerow(['Metric', 'Value', 'Unit'])
                 writer.writerow(['Total Samples', stats['performance']['total_samples'], 'samples'])
@@ -103,7 +102,7 @@ class ResultExporter:
                     writer.writerow(['Performance Rating', stats['performance']['rating'], ''])
                 writer.writerow([])
                 
-                # 时间分解部分
+                # Timing breakdown section
                 if stats['timing']:
                     writer.writerow(['=== TIMING BREAKDOWN ==='])
                     writer.writerow(['Stage', 'Min (ms)', 'Max (ms)', 'Avg (ms)', 'Std (ms)'])
@@ -118,7 +117,7 @@ class ResultExporter:
                         ])
                     writer.writerow([])
                 
-                # 资源使用部分
+                # Resource utilization section
                 writer.writerow(['=== RESOURCE UTILIZATION ==='])
                 writer.writerow(['Resource', 'Min (%)', 'Max (%)', 'Avg (%)', 'Std (%)'])
                 writer.writerow(['CPU Usage', 
@@ -144,101 +143,99 @@ class ResultExporter:
                                    f"{stats['resources']['gpu']['utilization']['avg']:.2f}",
                                    f"{stats['resources']['gpu']['utilization']['std']:.2f}"])
             
-            self.logger.info(f"汇总结果已保存至: {summary_filename}")
-            print(f"汇总结果已保存至: {summary_filename}")
+            print(f"System information and performance summary CSV file saved to: {summary_filename}")
             
         except Exception as e:
-            self.logger.error(f"保存汇总结果文件失败: {e}")
+            self.logger.error(f"Failed to save system information and performance summary CSV file: {e}")
             raise e
         
         return [detailed_filename, summary_filename]
 
 class Visualizer:
-    """可视化生成器"""
+    """Visualization generator"""
     
     def __init__(self, detailed_results=None, results_dir=None):
         self.detailed_results = detailed_results or []
         self.logger = logging.getLogger(__name__)
         self.matplotlib_available = dependencies['matplotlib']
         
-        # 使用指定的目录或默认的results目录
+        # Use specified directory or default results directory
         self.results_dir = results_dir or "results"
         
-        # 确保输出目录存在
+        # Ensure output directory exists
         if not os.path.exists(self.results_dir):
             os.makedirs(self.results_dir)
-            self.logger.info(f"创建可视化输出目录: {self.results_dir}")
+            self.logger.info(f"Created visualization output directory: {self.results_dir}")
     
     def _calculate_moving_average(self, data, window_size):
-        """计算滑动窗口平均值"""
+        """Calculate moving window average"""
         if len(data) < window_size:
-            # 如果数据量小于窗口大小，返回累积平均
+            # If data size is smaller than window size, return cumulative average
             return [np.mean(data[:i+1]) for i in range(len(data))]
         
         moving_avg = []
         for i in range(len(data)):
             if i < window_size - 1:
-                # 前面不足窗口大小的部分，使用从开始到当前位置的平均值
+                # For parts with insufficient window size, use average from start to current position
                 moving_avg.append(np.mean(data[:i+1]))
             else:
-                # 使用滑动窗口平均
+                # Use moving window average
                 window_data = data[i-window_size+1:i+1]
                 moving_avg.append(np.mean(window_data))
         
         return moving_avg
     
     def create_visualizations(self, stats, model_type):
-        """创建可视化图表"""
+        """Create visualization charts"""
         if not self.matplotlib_available:
-            self.logger.warning("matplotlib不可用，跳过可视化生成")
-            print("matplotlib不可用，跳过可视化生成")
+            self.logger.warning("matplotlib not available, skipping visualization generation")
+            print("matplotlib not available, skipping visualization generation")
             return []
         
         try:
             import matplotlib.pyplot as plt
             import matplotlib
-            matplotlib.use('Agg')  # 使用非交互式后端
+            matplotlib.use('Agg')  # Use non-interactive backend
             
-            self.logger.info(f"开始生成可视化图表到目录: {self.results_dir}")
-            print("正在生成可视化图表...")
+            self.logger.info(f"Generating visualization files to directory: {self.results_dir}")
+            print("Generating visualization charts...")
             
             generated_plots = []
             
-            # 生成详细时间折线图
+            # Generate first chart: detailed timing analysis line chart
             timing_plot = self._create_detailed_timing_plot(stats, model_type)
             if timing_plot:
                 generated_plots.append(timing_plot)
             
-            # 生成性能总结图表
+            # Generate second chart: performance summary chart
             summary_plot = self._create_summary_plot(stats, model_type)
             if summary_plot:
                 generated_plots.append(summary_plot)
             
-            self.logger.info(f"可视化图表生成完成，共生成 {len(generated_plots)} 个图表文件")
+            self.logger.info(f"Visualization chart generation completed, generated {len(generated_plots)} chart files")
             
             return generated_plots
             
         except Exception as e:
-            self.logger.error(f"创建可视化时出错: {e}")
-            print(f"创建可视化时出错: {e}")
+            self.logger.error(f"Error creating visualizations: {e}")
+            print(f"Error creating visualizations: {e}")
             import traceback
             traceback.print_exc()
             return []
     
     def _create_detailed_timing_plot(self, stats, model_type):
-        """创建详细的每帧速度分析折线图"""
+        """Create first chart: detailed per-frame speed analysis line chart"""
         if not self.detailed_results or len(self.detailed_results) < 10:
-            self.logger.warning("数据不足，跳过详细时间折线图生成")
-            print("数据不足，跳过详细时间折线图生成")
+            self.logger.warning("Insufficient data, skipping detailed timing line chart generation")
+            print("Insufficient data, skipping detailed timing line chart generation")
             return None
         
         try:
             import matplotlib.pyplot as plt
             
-            self.logger.info("开始生成详细速度分析折线图")
-            print("正在生成详细速度分析折线图...")
+            print("Generating detailed speed analysis chart...")
             
-            # 提取数据
+            # Extract data
             sample_ids = [r['sample_id'] for r in self.detailed_results]
             total_times = [max(r['total_time'], 0.001) for r in self.detailed_results]
             inf_times = [max(r['inference_time'], 0.001) for r in self.detailed_results]
@@ -246,51 +243,51 @@ class Visualizer:
             post_times = [r['postprocessing_time'] for r in self.detailed_results]
             render_times = [r['rendering_time'] for r in self.detailed_results]
             
-            # 计算FPS
+            # Calculate FPS
             fps_total = [min(1000.0 / t, 10000) for t in total_times]
             fps_inference = [min(1000.0 / t, 10000) for t in inf_times]
             
-            # 计算全局平均值
+            # Calculate global averages
             avg_fps_total = np.mean(fps_total)
             avg_fps_inference = np.mean(fps_inference)
             
-            # 设置滑动窗口大小
+            # Set moving window size
             data_length = len(fps_total)
             if data_length >= 100:
-                window_size = 20  # 大数据集使用20个样本的窗口
+                window_size = 20  # Use 20 sample window for large datasets
             elif data_length >= 50:
-                window_size = 10  # 中等数据集使用10个样本的窗口
+                window_size = 10  # Use 10 sample window for medium datasets
             else:
-                window_size = max(3, data_length // 5)  # 小数据集使用1/5数据量作为窗口，最少3个
+                window_size = max(3, data_length // 5)  # Use 1/5 data size as window for small datasets, minimum 3
             
-            self.logger.info(f"使用滑动窗口大小: {window_size} (数据总量: {data_length})")
+            self.logger.info(f"Using moving window size: {window_size} (total data: {data_length})")
             
-            # 计算滑动窗口平均
+            # Calculate moving window averages
             fps_total_ma = self._calculate_moving_average(fps_total, window_size)
             fps_inference_ma = self._calculate_moving_average(fps_inference, window_size)
             
-            # 创建图表
+            # Create chart
             fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16, 12))
             model_name = stats["system_info"]["model_name"]
             dataset_name = stats["system_info"]["dataset"]
             fig.suptitle(f'Per-Frame Speed Analysis: {model_name} on {dataset_name}', fontsize=16)
             
-            # 上图：FPS性能图
-            # 原始FPS数据（半透明）
+            # Top chart: FPS performance chart
+            # Raw FPS data (semi-transparent)
             ax1.plot(sample_ids, fps_total, label='Total FPS (Raw)', color='lightblue', alpha=0.5, linewidth=1)
             ax1.plot(sample_ids, fps_inference, label='Inference FPS (Raw)', color='lightcoral', alpha=0.5, linewidth=1)
             
-            # 滑动窗口平均FPS（醒目）
+            # Moving window average FPS (prominent)
             ax1.plot(sample_ids, fps_total_ma, label=f'Total FPS (MA-{window_size})', color='blue', alpha=0.8, linewidth=2)
             ax1.plot(sample_ids, fps_inference_ma, label=f'Inference FPS (MA-{window_size})', color='red', alpha=0.8, linewidth=2)
             
-            # 添加全局平均值线
+            # Add global average lines
             ax1.axhline(y=avg_fps_total, color='blue', linestyle='--', alpha=0.6, linewidth=1.5, 
                        label=f'Global Avg Total FPS: {avg_fps_total:.1f}')
             ax1.axhline(y=avg_fps_inference, color='red', linestyle='--', alpha=0.6, linewidth=1.5,
                        label=f'Global Avg Inference FPS: {avg_fps_inference:.1f}')
             
-            # 添加当前滑动窗口平均值（最后几个值的平均）
+            # Add current moving window average (average of last few values)
             current_total_ma = np.mean(fps_total_ma[-window_size:]) if len(fps_total_ma) >= window_size else fps_total_ma[-1]
             current_inf_ma = np.mean(fps_inference_ma[-window_size:]) if len(fps_inference_ma) >= window_size else fps_inference_ma[-1]
             
@@ -305,7 +302,7 @@ class Visualizer:
             ax1.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
             ax1.grid(True, alpha=0.3)
             
-            # 下图：时间分解堆积图
+            # Bottom chart: time breakdown stacked chart
             ax2.fill_between(sample_ids, 0, prep_times, label='Preprocessing', alpha=0.8, color='lightblue')
             current_height = prep_times
             
@@ -328,26 +325,25 @@ class Visualizer:
             
             plt.tight_layout()
             
-            # 保存图表
+            # Save chart
             timestamp = time.strftime('%Y%m%d_%H%M%S')
             timing_plot_filename = os.path.join(self.results_dir, f"{model_type}_speed_analysis_{timestamp}.png")
             plt.savefig(timing_plot_filename, format='png', dpi=300, bbox_inches='tight')
             
-            self.logger.info(f"详细速度分析图表已保存至: {timing_plot_filename}")
-            print(f"详细速度分析图表已保存至: {timing_plot_filename}")
+            print(f"Detailed speed analysis chart saved to: {timing_plot_filename}")
             
             plt.close(fig)
             return timing_plot_filename
             
         except Exception as e:
-            self.logger.error(f"创建详细速度折线图时出错: {e}")
-            print(f"创建详细速度折线图时出错: {e}")
+            self.logger.error(f"Error creating detailed speed line chart: {e}")
+            print(f"Error creating detailed speed line chart: {e}")
             import traceback
             traceback.print_exc()
             return None
     
     def _create_summary_plot(self, stats, model_type):
-        """创建性能总结图表"""
+        """Create second chart: performance summary chart (including timing breakdown, resource utilization, time distribution and system info)"""
         try:
             import matplotlib.pyplot as plt
             
@@ -356,7 +352,7 @@ class Visualizer:
             dataset_name = stats["system_info"]["dataset"]
             fig.suptitle(f'Benchmark Results Summary: {model_name} on {dataset_name}', fontsize=16)
             
-            # 1. 时间分解饼图
+            # 1. Timing breakdown pie chart
             if stats['timing']:
                 timing_data = [(k.replace('_', ' ').title(), v['avg']) for k, v in stats['timing'].items()]
                 labels, values = zip(*timing_data)
@@ -366,7 +362,7 @@ class Visualizer:
                 ax1.text(0.5, 0.5, 'No timing data available', ha='center', va='center', transform=ax1.transAxes)
                 ax1.set_title('Timing Breakdown')
             
-            # 2. 资源利用率柱状图
+            # 2. Resource utilization bar chart
             resources = ['CPU', 'Memory']
             usage = [stats['resources']['cpu']['avg'], stats['resources']['memory']['avg']]
             errors = [stats['resources']['cpu']['std'], stats['resources']['memory']['std']]
@@ -384,7 +380,7 @@ class Visualizer:
             ax2.set_ylabel('Usage (%)')
             ax2.set_ylim(0, 100)
             
-            # 3. 性能时间分布
+            # 3. Performance time distribution
             if self.detailed_results and len(self.detailed_results) > 10:
                 total_times = [r['total_time'] for r in self.detailed_results]
                 ax3.hist(total_times, bins=20, alpha=0.7, color='lightcoral', edgecolor='black')
@@ -399,7 +395,7 @@ class Visualizer:
                         ha='center', va='center', transform=ax3.transAxes)
                 ax3.set_title('Processing Time Distribution')
             
-            # 4. 系统信息和性能总结
+            # 4. System information and performance summary
             device_info = stats['system_info']['device']
             model_info = stats['system_info']['model_name']
             dataset_info = stats['system_info']['dataset']
@@ -457,20 +453,19 @@ Memory: {mem_avg:.1f}% ± {mem_std:.1f}%"""
             
             plt.tight_layout()
             
-            # 保存总结图表
+            # Save summary chart
             timestamp = time.strftime('%Y%m%d_%H%M%S')
             summary_plot_filename = os.path.join(self.results_dir, f"{model_type}_summary_{timestamp}.png")
             plt.savefig(summary_plot_filename, format='png', dpi=300, bbox_inches='tight')
             
-            self.logger.info(f"性能总结图表已保存至: {summary_plot_filename}")
-            print(f"性能总结图表已保存至: {summary_plot_filename}")
+            print(f"Comprehensive performance summary chart saved to: {summary_plot_filename}")
             
             plt.close(fig)
             return summary_plot_filename
             
         except Exception as e:
-            self.logger.error(f"创建总结图表时出错: {e}")
-            print(f"创建总结图表时出错: {e}")
+            self.logger.error(f"Error creating summary chart: {e}")
+            print(f"Error creating summary chart: {e}")
             import traceback
             traceback.print_exc()
             return None

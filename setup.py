@@ -14,20 +14,21 @@ def read_requirements():
         return [line.strip() for line in fh if line.strip() and not line.startswith("#")]
 
 setup(
-    name="dl-benchmark-tool",
-    version="0.1.0",
-    author="Your Name",
-    author_email="your.email@example.com",
-    description="A comprehensive deep learning model benchmarking tool",
+    name="hardware-benchamrk",
+    version="0.1.2",
+    author="zihan.deng",
+    author_email="zihan.deng0517@gmail.com",
+    description="A deep learning model hardware benchmarking tool",
     long_description=read_readme(),
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/dl-benchmark-tool",
+    url="https://github.com/Zihan-D/hardware-bench-yolo",
     packages=find_packages(),
+    keywords=["deep learning", "benchmark", "yolo", "hardware", "python"],
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
-        "License :: OSI Approved :: MIT License",
+        #"License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.8",
@@ -38,7 +39,17 @@ setup(
         "Topic :: Software Development :: Testing",
     ],
     python_requires=">=3.8",
-    install_requires=read_requirements(),
+    install_requires=[
+    "torch>=1.9.0",
+    "torchvision>=0.10.0",
+    "numpy>=1.19.0",
+    "psutil>=5.8.0",
+    "Pillow>=8.0.0",
+    "tqdm>=4.60.0",
+    "opencv-python",
+    "timm>=0.6.0",
+    ]
+,
     extras_require={
         "dev": [
             "pytest>=6.0",
@@ -48,6 +59,7 @@ setup(
         ],
         "full": [
             "ultralytics>=8.0.0",
+            "timm",
             "segmentation-models-pytorch>=0.3.0",
             "nvidia-ml-py3>=7.352.0",
             "matplotlib>=3.3.0",
@@ -56,7 +68,7 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "dl-benchmark=dl_benchmark.main:main",
+            "hardware-benchmark=hardware_benchmark.main:main",
         ],
     },
     include_package_data=True,

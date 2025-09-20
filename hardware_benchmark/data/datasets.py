@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-数据集模块 - 包含各种数据集的加载和预处理功能
+Dataset module - contains loading and preprocessing functions for various datasets
 """
 
 import os
@@ -22,7 +22,7 @@ except ImportError:
     PIL_AVAILABLE = False
 
 class InfiniteRandomDataset(Dataset):
-    """无限随机采样数据集包装器"""
+    """Infinite random sampling dataset wrapper"""
     def __init__(self, original_dataset, target_length):
         self.original_dataset = original_dataset
         self.target_length = target_length
@@ -32,31 +32,31 @@ class InfiniteRandomDataset(Dataset):
         return self.target_length
     
     def __getitem__(self, idx):
-        # 随机从原始数据集中选择一个样本
+        # Randomly select a sample from the original dataset
         random_idx = random.randint(0, self.original_length - 1)
         return self.original_dataset[random_idx]
 
 class KITTIDataset(Dataset):
-    """KITTI数据集类"""
+    """KITTI dataset class"""
     def __init__(self, root_dir, split='training', transform=None):
         self.root_dir = Path(root_dir)
         self.split = split
         self.transform = transform
         
-        # 获取logger
+        # Get logger
         self.logger = logging.getLogger(__name__)
         
-        # 图像路径
+        # Image path
         self.image_dir = self.root_dir / split / 'image_2'
         
-        # 获取所有图像文件
+        # Get all image files
         if self.image_dir.exists():
             self.image_files = sorted(list(self.image_dir.glob('*.png')))
-            self.logger.info(f"KITTI数据集找到 {len(self.image_files)} 个图像文件")
+            self.logger.info(f"KITTI dataset found {len(self.image_files)} image files")
         else:
-            # 如果没有KITTI数据，创建合成数据
-            self.logger.warning(f"KITTI数据路径不存在: {self.image_dir}")
-            self.logger.info("将使用合成数据进行测试")
+            # If no KITTI data exists, create synthetic data
+            self.logger.warning(f"KITTI data path does not exist: {self.image_dir}")
+            self.logger.info("Will use synthetic data for testing")
             self.image_files = [f"synthetic_kitti_{i:06d}.png" for i in range(1000)]
     
     def __len__(self):
@@ -64,10 +64,10 @@ class KITTIDataset(Dataset):
     
     def __getitem__(self, idx):
         if isinstance(self.image_files[idx], str) and 'synthetic' in self.image_files[idx]:
-            # 创建合成KITTI样式图像 (375x1242是KITTI的典型尺寸)
+            # Create synthetic KITTI-style image (375x1242 is typical KITTI size)
             img = np.random.randint(0, 255, (375, 1242, 3), dtype=np.uint8)
         else:
-            # 加载真实图像
+            # Load real image
             img_path = self.image_files[idx]
             if PIL_AVAILABLE:
                 img = Image.open(img_path).convert('RGB')
@@ -75,38 +75,38 @@ class KITTIDataset(Dataset):
             else:
                 img = np.random.randint(0, 255, (375, 1242, 3), dtype=np.uint8)
         
-        # 应用变换
+        # Apply transforms
         if self.transform:
             img = self.transform(img)
         
         return img, 0
 
 class CityscapesDataset(Dataset):
-    """Cityscapes数据集类（用于分割）"""
+    """Cityscapes dataset class (for segmentation)"""
     def __init__(self, root_dir, split='val', transform=None, target_transform=None):
         self.root_dir = Path(root_dir)
         self.split = split
         self.transform = transform
         self.target_transform = target_transform
         
-        # 获取logger
+        # Get logger
         self.logger = logging.getLogger(__name__)
         
-        # 图像和标签路径
+        # Image and label paths
         self.image_dir = self.root_dir / 'leftImg8bit' / split
         self.label_dir = self.root_dir / 'gtFine' / split
         
-        # 获取图像文件
+        # Get image files
         if self.image_dir.exists():
             self.image_files = []
             for city_dir in self.image_dir.iterdir():
                 if city_dir.is_dir():
                     self.image_files.extend(list(city_dir.glob('*_leftImg8bit.png')))
             self.image_files = sorted(self.image_files)
-            self.logger.info(f"Cityscapes数据集找到 {len(self.image_files)} 个图像文件")
+            self.logger.info(f"Cityscapes dataset found {len(self.image_files)} image files")
         else:
-            self.logger.warning(f"Cityscapes数据路径不存在: {self.image_dir}")
-            self.logger.info("将使用合成数据进行测试")
+            self.logger.warning(f"Cityscapes data path does not exist: {self.image_dir}")
+            self.logger.info("Will use synthetic data for testing")
             self.image_files = [f"synthetic_cityscapes_{i:06d}.png" for i in range(500)]
     
     def __len__(self):
@@ -114,15 +114,15 @@ class CityscapesDataset(Dataset):
     
     def __getitem__(self, idx):
         if isinstance(self.image_files[idx], str) and 'synthetic' in self.image_files[idx]:
-            # 创建合成Cityscapes样式图像 (512x1024，减小尺寸以加快处理)
+            # Create synthetic Cityscapes-style image (512x1024, reduced size for faster processing)
             img = np.random.randint(0, 255, (512, 1024, 3), dtype=np.uint8)
-            mask = np.random.randint(0, 19, (512, 1024), dtype=np.uint8)  # 19个类别
+            mask = np.random.randint(0, 19, (512, 1024), dtype=np.uint8)  # 19 classes
         else:
             img_path = self.image_files[idx]
             if PIL_AVAILABLE:
                 img = Image.open(img_path).convert('RGB')
                 img = np.array(img)
-                # 尝试找到对应的标签文件
+                # Try to find corresponding label file
                 label_path = str(img_path).replace('leftImg8bit', 'gtFine_labelIds').replace('leftImg8bit.png', 'gtFine_labelIds.png')
                 if os.path.exists(label_path):
                     mask = Image.open(label_path)
@@ -133,7 +133,7 @@ class CityscapesDataset(Dataset):
                 img = np.random.randint(0, 255, (512, 1024, 3), dtype=np.uint8)
                 mask = np.random.randint(0, 19, (512, 1024), dtype=np.uint8)
         
-        # 应用变换
+        # Apply transforms
         if self.transform:
             img = self.transform(img)
         if self.target_transform:
@@ -142,7 +142,7 @@ class CityscapesDataset(Dataset):
         return img, mask
 
 class SyntheticDataset(torch.utils.data.Dataset):
-    """合成数据集用于分类测试"""
+    """Synthetic dataset for classification testing"""
     def __init__(self, size, img_size=224, num_classes=1000):
         self.size = size
         self.img_size = img_size
@@ -152,16 +152,16 @@ class SyntheticDataset(torch.utils.data.Dataset):
         return self.size
         
     def __getitem__(self, idx):
-        # 生成随机图像 (3通道)
+        # Generate random image (3 channels)
         img = torch.randn(3, self.img_size, self.img_size)
-        # 添加ImageNet标准化
+        # Add ImageNet normalization
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         img = normalize(img)
         label = torch.randint(0, self.num_classes, (1,)).item()
         return img, label
 
 class SyntheticDetectionDataset(torch.utils.data.Dataset):
-    """合成检测数据集"""
+    """Synthetic detection dataset"""
     def __init__(self, size):
         self.size = size
         
@@ -169,20 +169,20 @@ class SyntheticDetectionDataset(torch.utils.data.Dataset):
         return self.size
         
     def __getitem__(self, idx):
-        # 生成随机图像
+        # Generate random image
         img = np.random.randint(0, 255, (640, 640, 3), dtype=np.uint8)
         
-        # 转换为tensor
+        # Convert to tensor
         img = torch.from_numpy(img).permute(2, 0, 1).float() / 255.0
         
-        # 添加标准化
+        # Add normalization
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         img = normalize(img)
         
         return img, 0
 
 class SyntheticSegmentationDataset(torch.utils.data.Dataset):
-    """合成分割数据集"""
+    """Synthetic segmentation dataset"""
     def __init__(self, size):
         self.size = size
         
@@ -190,51 +190,51 @@ class SyntheticSegmentationDataset(torch.utils.data.Dataset):
         return self.size
         
     def __getitem__(self, idx):
-        # 生成随机图像和分割mask
+        # Generate random image and segmentation mask
         img = np.random.randint(0, 255, (512, 1024, 3), dtype=np.uint8)
         
-        # 转换为tensor并添加标准化
+        # Convert to tensor and add normalization
         img = torch.from_numpy(img).permute(2, 0, 1).float() / 255.0
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         img = normalize(img)
         
-        # 生成随机分割mask (19个类别对应Cityscapes)
+        # Generate random segmentation mask (19 classes corresponding to Cityscapes)
         mask = torch.randint(0, 19, (512, 1024)).long()
         return img, mask
 
 class DatasetLoader:
-    """数据集加载器类"""
+    """Dataset loader class"""
     
     def __init__(self, test_samples=100):
         self.test_samples = test_samples
         self.logger = logging.getLogger(__name__)
     
     def _create_infinite_dataloader_if_needed(self, dataset, batch_size=1, shuffle=False):
-        """如果需要的话，创建无限数据加载器"""
+        """Create infinite dataloader if needed"""
         dataset_size = len(dataset)
         
-        # 如果测试样本数大于数据集大小，使用无限随机采样
+        # If test sample count is larger than dataset size, use infinite random sampling
         if self.test_samples != -1 and self.test_samples > dataset_size:
-            self.logger.info(f"测试样本数 ({self.test_samples}) 大于数据集大小 ({dataset_size})，使用随机重复采样")
-            print(f"测试样本数 ({self.test_samples}) 大于数据集大小 ({dataset_size})")
-            print("将使用随机重复采样来达到目标样本数")
+            self.logger.info(f"Test sample count ({self.test_samples}) is larger than dataset size ({dataset_size}), using random repeat sampling")
+            print(f"Test sample count ({self.test_samples}) is larger than dataset size ({dataset_size})")
+            print("Will use random repeat sampling to reach target sample count")
             
-            # 使用无限随机数据集包装器
+            # Use infinite random dataset wrapper
             infinite_dataset = InfiniteRandomDataset(dataset, self.test_samples)
             dataloader = DataLoader(infinite_dataset, batch_size=batch_size, shuffle=shuffle)
         else:
-            # 正常情况下使用标准数据加载器
+            # Normal case, use standard dataloader
             dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
         
         return dataloader
     
     def load_mnist(self):
-        """加载MNIST数据集 - 修复通道数问题"""
-        self.logger.info("开始加载MNIST数据集")
-        print("正在加载MNIST数据集...")
-        print("注意：将灰度图像(1通道)转换为RGB图像(3通道)并调整大小到224x224")
+        """Load MNIST dataset - fix channel count issue"""
+        self.logger.info("Starting to load MNIST dataset")
+        print("Loading MNIST dataset...")
+        print("Note: Converting grayscale images (1 channel) to RGB images (3 channels) and resizing to 224x224")
         
-        # 对于MNIST，需要特殊的预处理：1通道->3通道，28x28->224x224
+        # For MNIST, special preprocessing is needed: 1 channel->3 channels, 28x28->224x224
         transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Lambda(lambda x: x.repeat(3, 1, 1) if x.shape[0] == 1 else x),
@@ -248,17 +248,17 @@ class DatasetLoader:
         
         dataloader = self._create_infinite_dataloader_if_needed(dataset, batch_size=1, shuffle=True)
         
-        self.logger.info(f"MNIST数据集加载完成，共{len(dataset)}个样本")
-        print(f"MNIST数据集加载完成，共{len(dataset)}个样本")
-        print(f"将根据用户设置测试 {self.test_samples if self.test_samples != -1 else len(dataset)} 个样本")
+        self.logger.info(f"MNIST dataset loading completed, total {len(dataset)} samples")
+        print(f"MNIST dataset loading completed, total {len(dataset)} samples")
+        print(f"Will test {self.test_samples if self.test_samples != -1 else len(dataset)} samples according to user settings")
         
         return dataloader
     
     def load_cifar10(self):
-        """加载CIFAR-10数据集 - 修复尺寸问题"""
-        self.logger.info("开始加载CIFAR-10数据集")
-        print("正在加载CIFAR-10数据集...")
-        print("注意：将图像从32x32调整到224x224")
+        """Load CIFAR-10 dataset - fix size issue"""
+        self.logger.info("Starting to load CIFAR-10 dataset")
+        print("Loading CIFAR-10 dataset...")
+        print("Note: Resizing images from 32x32 to 224x224")
         
         transform = transforms.Compose([
             transforms.ToTensor(),
@@ -272,15 +272,15 @@ class DatasetLoader:
         
         dataloader = self._create_infinite_dataloader_if_needed(dataset, batch_size=1, shuffle=True)
         
-        self.logger.info(f"CIFAR-10数据集加载完成，共{len(dataset)}个样本")
-        print(f"CIFAR-10数据集加载完成，共{len(dataset)}个样本")
+        self.logger.info(f"CIFAR-10 dataset loading completed, total {len(dataset)} samples")
+        print(f"CIFAR-10 dataset loading completed, total {len(dataset)} samples")
         
         return dataloader
     
     def load_kitti(self):
-        """加载KITTI数据集"""
-        self.logger.info("开始加载KITTI数据集")
-        print("正在加载KITTI数据集...")
+        """Load KITTI dataset"""
+        self.logger.info("Starting to load KITTI dataset")
+        print("Loading KITTI dataset...")
         
         transform = transforms.Compose([
             transforms.ToTensor(),
@@ -296,15 +296,15 @@ class DatasetLoader:
         
         dataloader = self._create_infinite_dataloader_if_needed(dataset, batch_size=1, shuffle=True)
         
-        self.logger.info(f"KITTI数据集加载完成，共{len(dataset)}个样本")
-        print(f"KITTI数据集加载完成，共{len(dataset)}个样本")
+        self.logger.info(f"KITTI dataset loading completed, total {len(dataset)} samples")
+        print(f"KITTI dataset loading completed, total {len(dataset)} samples")
         
         return dataloader
     
     def load_cityscapes(self):
-        """加载Cityscapes分割数据集"""
-        self.logger.info("开始加载Cityscapes数据集")
-        print("正在加载Cityscapes数据集...")
+        """Load Cityscapes segmentation dataset"""
+        self.logger.info("Starting to load Cityscapes dataset")
+        print("Loading Cityscapes dataset...")
         
         transform = transforms.Compose([
             transforms.ToTensor(),
@@ -319,7 +319,7 @@ class DatasetLoader:
                 mask = torch.from_numpy(np.array(mask)).long()
             if mask.dim() > 2:
                 mask = mask.squeeze()
-            # 调整大小
+            # Resize
             mask = torch.nn.functional.interpolate(
                 mask.unsqueeze(0).unsqueeze(0).float(), 
                 size=(512, 1024), 
@@ -336,64 +336,64 @@ class DatasetLoader:
         
         dataloader = self._create_infinite_dataloader_if_needed(dataset, batch_size=1, shuffle=True)
         
-        self.logger.info(f"Cityscapes数据集加载完成，共{len(dataset)}个样本")
-        print(f"Cityscapes数据集加载完成，共{len(dataset)}个样本")
+        self.logger.info(f"Cityscapes dataset loading completed, total {len(dataset)} samples")
+        print(f"Cityscapes dataset loading completed, total {len(dataset)} samples")
         
         return dataloader
     
     def create_synthetic_classification_dataset(self, img_size=224, num_classes=1000):
-        """创建合成分类数据集"""
+        """Create synthetic classification dataset"""
         if self.test_samples == -1:
             dataset_size = 10000
         else:
             dataset_size = max(self.test_samples, 100)
         
-        self.logger.info(f"创建合成分类数据集 ({img_size}x{img_size}, {num_classes}类, {dataset_size}个样本)")
-        print(f"创建合成分类数据集 ({img_size}x{img_size}, {num_classes}类, {dataset_size}个样本)...")
+        self.logger.info(f"Creating synthetic classification dataset ({img_size}x{img_size}, {num_classes} classes, {dataset_size} samples)")
+        print(f"Creating synthetic classification dataset ({img_size}x{img_size}, {num_classes} classes, {dataset_size} samples)...")
         
         dataset = SyntheticDataset(dataset_size, img_size, num_classes)
         dataloader = self._create_infinite_dataloader_if_needed(dataset, batch_size=1, shuffle=True)
         
-        self.logger.info("合成分类数据集创建完成")
-        print("合成分类数据集创建完成")
+        self.logger.info("Synthetic classification dataset creation completed")
+        print("Synthetic classification dataset creation completed")
         
         return dataloader
     
     def create_synthetic_detection_dataset(self):
-        """创建合成检测数据集"""
+        """Create synthetic detection dataset"""
         if self.test_samples == -1:
             num_images = 1000
         else:
             num_images = max(self.test_samples, 10)
         
-        self.logger.info(f"创建合成检测数据集 ({num_images}张测试图像)")
-        print(f"创建合成检测数据集 ({num_images}张测试图像)")
+        self.logger.info(f"Creating synthetic detection dataset ({num_images} test images)")
+        print(f"Creating synthetic detection dataset ({num_images} test images)")
         
         dataset = SyntheticDetectionDataset(num_images)
         dataloader = self._create_infinite_dataloader_if_needed(dataset, batch_size=1, shuffle=True)
         
-        # 生成测试图像路径列表（用于兼容性）
+        # Generate test image path list (for compatibility)
         test_images = [f"synthetic_test_img_{i:06d}.jpg" for i in range(num_images)]
         
-        self.logger.info("合成检测数据集创建完成")
-        print("合成检测数据集创建完成")
+        self.logger.info("Synthetic detection dataset creation completed")
+        print("Synthetic detection dataset creation completed")
         
         return dataloader, test_images
     
     def create_synthetic_segmentation_dataset(self):
-        """创建合成分割数据集"""
+        """Create synthetic segmentation dataset"""
         if self.test_samples == -1:
             dataset_size = 500
         else:
             dataset_size = max(self.test_samples, 50)
         
-        self.logger.info(f"创建合成分割数据集 (512x1024, 19类, {dataset_size}个样本)")
-        print(f"创建合成分割数据集 (512x1024, 19类, {dataset_size}个样本)")
+        self.logger.info(f"Creating synthetic segmentation dataset (512x1024, 19 classes, {dataset_size} samples)")
+        print(f"Creating synthetic segmentation dataset (512x1024, 19 classes, {dataset_size} samples)")
         
         dataset = SyntheticSegmentationDataset(dataset_size)
         dataloader = self._create_infinite_dataloader_if_needed(dataset, batch_size=1, shuffle=True)
         
-        self.logger.info("合成分割数据集创建完成")
-        print("合成分割数据集创建完成")
+        self.logger.info("Synthetic segmentation dataset creation completed")
+        print("Synthetic segmentation dataset creation completed")
         
         return dataloader

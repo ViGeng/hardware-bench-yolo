@@ -1,0 +1,39 @@
+**1. CUDA Related Errors**
+```bash
+# Check if CUDA is available
+python -c "import torch; print(torch.cuda.is_available())"
+
+# If not available, use CPU
+python main.py --device cpu ...
+```
+
+**2. Model Download Failures**
+```bash
+# Check network connection, models will be automatically downloaded from the internet
+# YOLO models will be downloaded to ~/.cache/ultralytics/
+# TIMM models will be downloaded to ~/.cache/torch/
+```
+
+**3. Out of Memory**
+```bash
+# Reduce the number of samples
+python main.py --samples 50 ...
+
+# Use smaller models
+python main.py --model resnet18 ...  # 而不是 resnet50
+```
+
+**4. Missing Dependencies**
+```bash
+# Install corresponding libraries based on error messages
+pip install timm  # for classification models
+pip install ultralytics  # for YOLO detection
+pip install segmentation-models-pytorch  # for segmentation models
+```
+
+**5. Permission Issues (Windows)**
+```bash
+# Run command prompt as administrator
+# Or modify output directory to a directory with write permissions
+python main.py --output-dir C:\Users\YourName\benchmark_results ...
+```
