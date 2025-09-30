@@ -1,6 +1,6 @@
 # Deep Learning Benchmark Tool
 
-A deep learning model performance benchmarking tool that supports image classification, object detection, and semantic segmentation tasks.
+A deep learning model performance benchmarking tool that supports image classification, object detection, semantic segmentation tasks with pretrained/customized models on multiple datasets. This tool aims to give a glance at the ML performance of your device.
 
 ## System Requirements
 
