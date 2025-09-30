@@ -76,9 +76,9 @@ python main.py \
 ```
 
 
-**Disable Chart Generation (CSV only)**:
+**Disable Chart Generation**:
 ```bash
-    --no-plots
+    --plot
 ```
 
 **Silent Mode (reduced output)**:
