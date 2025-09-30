@@ -83,7 +83,7 @@ python main.py \
 
 **Silent Mode (reduced output)**:
 ```bash
-    --quiet
+    python main.py --quiet
 ```
 
 **Test All Samples**:
