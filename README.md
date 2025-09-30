@@ -88,7 +88,7 @@ python main.py \
 
 **Test All Samples**:
 ```bash
-    --samples -1
+    python main.py --samples -1
 ```
 
 ## Model and Dataset Support
