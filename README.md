@@ -76,7 +76,7 @@ python main.py \
 ```
 
 
-**Disable Chart Generation**:
+**Chart Generation**:
 ```bash
     --plot
 ```
