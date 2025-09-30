@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 """
-基准测试模块 - 包含各种模型类型的基准测试逻辑
+Benchmark test module - contains benchmark test logic for various model types
 """
 
 import time
 import logging
 import numpy as np
 import torch
-from utils import safe_time_value
+from core.utils import safe_time_value, check_dependencies
+
+# Check dependencies
+dependencies = check_dependencies()
 
 class BenchmarkRunner:
-    """基准测试运行器"""
+    """Benchmark test runner"""
     
     def __init__(self, model, model_type, model_info, device, rendering_engine, test_samples=100):
         self.model = model
@@ -23,13 +26,25 @@ class BenchmarkRunner:
         
         self.total_samples = 0
         self.detailed_results = []
+        
+        # Initialize tqdm (if available)
+        self.tqdm_available = dependencies.get('tqdm', False)
+        if self.tqdm_available:
+            try:
+                from tqdm import tqdm
+                self.tqdm = tqdm
+            except ImportError:
+                self.tqdm_available = False
+                self.tqdm = None
+        else:
+            self.tqdm = None
     
     def run_classification_benchmark(self, dataloader):
-        """运行分类模型基准测试"""
-        self.logger.info("开始分类模型基准测试")
-        print("\n开始分类模型基准测试...")
-        print(f"正在使用模型: {self.model_info['name']}")
-        print(f"计划测试样本数: {self.test_samples if self.test_samples != -1 else '全部'}")
+        """Run classification model benchmark test"""
+        self.logger.info("Starting classification model benchmark test")
+        print("\nStarting classification model benchmark test...")
+        print(f"Using model: {self.model_info['name']}")
+        print(f"Planned test samples: {self.test_samples if self.test_samples != -1 else 'All'}")
         
         batch_times = []
         preprocessing_times = []
@@ -38,58 +53,76 @@ class BenchmarkRunner:
         rendering_times = []
         
         self.model.eval()
+        
+        # Calculate total iterations - modified to support unlimited sampling
+        if self.test_samples == -1:
+            total_iterations = len(dataloader)
+        else:
+            total_iterations = self.test_samples
+        
+        # Use tqdm or traditional progress display
+        if self.tqdm_available:
+            progress_bar = self.tqdm(
+                total=total_iterations,
+                desc="Processing samples",
+                unit="samples",
+                disable=False
+            )
+        else:
+            progress_bar = None
+        
         with torch.no_grad():
             for batch_idx, (data, target) in enumerate(dataloader):
                 batch_start = time.time()
                 
-                # 验证输入数据形状
+                # Verify input data shape
                 if batch_idx == 0:
-                    self.logger.info(f"输入数据形状: {data.shape}, 数据类型: {data.dtype}")
-                    print(f"输入数据形状: {data.shape}")
-                    print(f"数据类型: {data.dtype}")
-                    print(f"数据范围: [{data.min().item():.3f}, {data.max().item():.3f}]")
+                    self.logger.info(f"Input data shape: {data.shape}, data type: {data.dtype}")
+                    print(f"Input data shape: {data.shape}")
+                    print(f"Data type: {data.dtype}")
+                    print(f"Data range: [{data.min().item():.3f}, {data.max().item():.3f}]")
                 
-                # 预处理时间
+                # Preprocessing time
                 prep_start = time.time()
                 data = data.to(self.device)
                 prep_time = (time.time() - prep_start) * 1000  # ms
                 
-                # 推理时间
+                # Inference time
                 inf_start = time.time()
                 try:
                     output = self.model(data)
                     inf_time = (time.time() - inf_start) * 1000  # ms
                 except Exception as e:
-                    self.logger.error(f"推理过程中出错: {e}")
-                    print(f"推理过程中出错: {e}")
+                    self.logger.error(f"Error during inference: {e}")
+                    print(f"Error during inference: {e}")
                     raise e
                 
-                # 后处理时间（分类任务简单，几乎为0）
+                # Postprocessing time (classification task is simple, almost 0)
                 post_start = time.time()
                 post_time = (time.time() - post_start) * 1000  # ms
                 
-                # 渲染时间
+                # Rendering time
                 render_start = time.time()
                 try:
                     rendered_image = self.rendering_engine.render_classification_result(data, output)
                     render_time = (time.time() - render_start) * 1000  # ms
                 except Exception as e:
-                    self.logger.warning(f"渲染失败: {e}")
+                    self.logger.warning(f"Rendering failed: {e}")
                     render_time = 0.0
                 
                 batch_time = (time.time() - batch_start) * 1000  # ms
                 
-                # 安全处理时间值
+                # Safely handle time values
                 prep_time = safe_time_value(prep_time)
                 inf_time = safe_time_value(inf_time)
                 post_time = safe_time_value(post_time)
                 render_time = safe_time_value(render_time)
                 batch_time = safe_time_value(batch_time)
                 
-                # 记录详细结果
+                # Record detailed results
                 self._record_batch_results(data, prep_time, inf_time, post_time, render_time, batch_time)
                 
-                # 记录汇总时间
+                # Record aggregated times
                 preprocessing_times.append(prep_time)
                 inference_times.append(inf_time)
                 postprocessing_times.append(post_time)
@@ -98,16 +131,26 @@ class BenchmarkRunner:
                 
                 self.total_samples += len(data)
                 
-                # 进度显示
-                if batch_idx % 10 == 0:
+                # Update progress bar information
+                if self.tqdm_available and progress_bar:
                     fps = 1000.0 / (batch_time / len(data)) if batch_time > 0 else 0
-                    self._print_progress(fps)
+                    progress_bar.set_postfix({'FPS': f'{fps:.1f}'})
+                    progress_bar.update(len(data))
+                else:
+                    # Traditional progress display (reduced frequency)
+                    if batch_idx % 50 == 0:
+                        fps = 1000.0 / (batch_time / len(data)) if batch_time > 0 else 0
+                        self._print_progress(fps)
                 
-                # 检查是否达到目标样本数
+                # Check if target sample count is reached
                 if self._should_stop_testing():
                     break
         
-        self.logger.info(f"分类模型基准测试完成，总计处理 {self.total_samples} 个样本")
+        # Close progress bar
+        if self.tqdm_available and progress_bar:
+            progress_bar.close()
+        
+        self.logger.info(f"Classification model benchmark test completed, processed {self.total_samples} samples in total")
         
         return {
             'preprocessing_times': preprocessing_times,
@@ -118,21 +161,21 @@ class BenchmarkRunner:
         }
     
     def run_detection_benchmark(self, dataloader, test_images=None):
-        """运行检测模型基准测试"""
-        self.logger.info("开始检测模型基准测试")
-        print("\n开始检测模型基准测试...")
-        print(f"计划测试图像数: {self.test_samples if self.test_samples != -1 else '全部'}")
+        """Run detection model benchmark test"""
+        self.logger.info("Starting detection model benchmark test")
+        print("\nStarting detection model benchmark test...")
+        print(f"Planned test images: {self.test_samples if self.test_samples != -1 else 'All'}")
         
         preprocessing_times = []
         inference_times = []
         postprocessing_times = []
         rendering_times = []
         
-        # 确定实际要测试的图像数量
+        # Determine actual number of images to test
         num_test_images = self._calculate_test_images_count(dataloader, test_images)
         
-        self.logger.info(f"实际测试图像数: {num_test_images}")
-        print(f"实际测试图像数: {num_test_images}")
+        self.logger.info(f"Actual test image count: {num_test_images}")
+        print(f"Actual test image count: {num_test_images}")
         
         if self.model_info['type'] == 'yolo':
             return self._run_yolo_detection_benchmark(num_test_images)
@@ -140,11 +183,11 @@ class BenchmarkRunner:
             return self._run_torchvision_detection_benchmark(dataloader, num_test_images)
     
     def run_segmentation_benchmark(self, dataloader):
-        """运行分割模型基准测试"""
-        self.logger.info("开始分割模型基准测试")
-        print("\n开始分割模型基准测试...")
-        print(f"正在使用模型: {self.model_info['name']}")
-        print(f"计划测试样本数: {self.test_samples if self.test_samples != -1 else '全部'}")
+        """Run segmentation model benchmark test"""
+        self.logger.info("Starting segmentation model benchmark test")
+        print("\nStarting segmentation model benchmark test...")
+        print(f"Using model: {self.model_info['name']}")
+        print(f"Planned test samples: {self.test_samples if self.test_samples != -1 else 'All'}")
         
         batch_times = []
         preprocessing_times = []
@@ -153,61 +196,79 @@ class BenchmarkRunner:
         rendering_times = []
         
         self.model.eval()
+        
+        # Calculate total iterations - modified to support unlimited sampling
+        if self.test_samples == -1:
+            total_iterations = len(dataloader)
+        else:
+            total_iterations = self.test_samples
+        
+        # Use tqdm or traditional progress display
+        if self.tqdm_available:
+            progress_bar = self.tqdm(
+                total=total_iterations,
+                desc="Processing samples",
+                unit="samples",
+                disable=False
+            )
+        else:
+            progress_bar = None
+        
         with torch.no_grad():
             for batch_idx, (data, target) in enumerate(dataloader):
                 batch_start = time.time()
                 
-                # 验证输入数据形状
+                # Verify input data shape
                 if batch_idx == 0:
-                    self.logger.info(f"分割模型输入数据形状: {data.shape}, 目标形状: {target.shape}")
-                    print(f"输入数据形状: {data.shape}")
-                    print(f"目标形状: {target.shape}")
+                    self.logger.info(f"Segmentation model input data shape: {data.shape}, target shape: {target.shape}")
+                    print(f"Input data shape: {data.shape}")
+                    print(f"Target shape: {target.shape}")
                 
-                # 预处理时间
+                # Preprocessing time
                 prep_start = time.time()
                 data = data.to(self.device)
                 prep_time = (time.time() - prep_start) * 1000  # ms
                 
-                # 推理时间
+                # Inference time
                 inf_start = time.time()
                 try:
                     output = self.model(data)
                     inf_time = (time.time() - inf_start) * 1000  # ms
                 except Exception as e:
-                    self.logger.error(f"分割推理过程中出错: {e}")
-                    print(f"推理过程中出错: {e}")
+                    self.logger.error(f"Error during segmentation inference: {e}")
+                    print(f"Error during inference: {e}")
                     raise e
                 
-                # 后处理时间（例如softmax和argmax）
+                # Postprocessing time (e.g., softmax and argmax)
                 post_start = time.time()
-                if output.dim() > 3:  # 如果输出是logits
+                if output.dim() > 3:  # If output is logits
                     pred = torch.argmax(torch.softmax(output, dim=1), dim=1)
                 else:
                     pred = output
                 post_time = (time.time() - post_start) * 1000  # ms
                 
-                # 渲染时间
+                # Rendering time
                 render_start = time.time()
                 try:
                     rendered_image = self.rendering_engine.render_segmentation_result(data, pred)
                     render_time = (time.time() - render_start) * 1000  # ms
                 except Exception as e:
-                    self.logger.warning(f"分割渲染失败: {e}")
+                    self.logger.warning(f"Segmentation rendering failed: {e}")
                     render_time = 0.0
                 
                 batch_time = (time.time() - batch_start) * 1000  # ms
                 
-                # 安全处理时间值
+                # Safely handle time values
                 prep_time = safe_time_value(prep_time)
                 inf_time = safe_time_value(inf_time)
                 post_time = safe_time_value(post_time)
                 render_time = safe_time_value(render_time)
                 batch_time = safe_time_value(batch_time)
                 
-                # 记录详细结果
+                # Record detailed results
                 self._record_batch_results(data, prep_time, inf_time, post_time, render_time, batch_time)
                 
-                # 记录汇总时间
+                # Record aggregated times
                 preprocessing_times.append(prep_time)
                 inference_times.append(inf_time)
                 postprocessing_times.append(post_time)
@@ -216,16 +277,26 @@ class BenchmarkRunner:
                 
                 self.total_samples += len(data)
                 
-                # 进度显示
-                if batch_idx % 10 == 0:
+                # Update progress bar information
+                if self.tqdm_available and progress_bar:
                     fps = 1000.0 / (batch_time / len(data)) if batch_time > 0 else 0
-                    self._print_progress(fps)
+                    progress_bar.set_postfix({'FPS': f'{fps:.1f}'})
+                    progress_bar.update(len(data))
+                else:
+                    # Traditional progress display (reduced frequency)
+                    if batch_idx % 50 == 0:
+                        fps = 1000.0 / (batch_time / len(data)) if batch_time > 0 else 0
+                        self._print_progress(fps)
                 
-                # 检查是否达到目标样本数
+                # Check if target sample count is reached
                 if self._should_stop_testing():
                     break
         
-        self.logger.info(f"分割模型基准测试完成，总计处理 {self.total_samples} 个样本")
+        # Close progress bar
+        if self.tqdm_available and progress_bar:
+            progress_bar.close()
+        
+        self.logger.info(f"Segmentation model benchmark test completed, processed {self.total_samples} samples in total")
         
         return {
             'preprocessing_times': preprocessing_times,
@@ -236,36 +307,47 @@ class BenchmarkRunner:
         }
     
     def _run_yolo_detection_benchmark(self, num_test_images):
-        """运行YOLO检测基准测试"""
-        self.logger.info("使用YOLO模型进行检测测试")
+        """Run YOLO detection benchmark test"""
+        self.logger.info("Using YOLO model for detection testing")
         
         preprocessing_times = []
         inference_times = []
         postprocessing_times = []
         rendering_times = []
         
-        for i in range(num_test_images):
-            # 创建随机图像进行测试
+        # Use tqdm or traditional progress display
+        if self.tqdm_available:
+            progress_bar = self.tqdm(
+                range(num_test_images),
+                desc="Processing images",
+                unit="images",
+                disable=False
+            )
+        else:
+            progress_bar = range(num_test_images)
+        
+        for i in progress_bar:
+            # Create random image for testing
             img = np.random.randint(0, 255, (640, 640, 3), dtype=np.uint8)
             
-            # 记录总时间
+            # Record total time
             total_start = time.time()
             results = self.model(img, device=self.device, verbose=False)
             total_elapsed = (time.time() - total_start) * 1000  # ms
             
-            # 获取时间信息
+            # Get timing information
             prep_time, inf_time, post_time = self._extract_yolo_timing(results, total_elapsed)
             
-            # 渲染时间
+            # Rendering time
             render_start = time.time()
             try:
                 rendered_image = self.rendering_engine.render_detection_result(img, results)
                 render_time = (time.time() - render_start) * 1000  # ms
             except Exception as e:
-                self.logger.warning(f"检测渲染失败: {e}")
+                self.logger.warning(f"Detection rendering failed: {e}")
                 render_time = 0.0
             
-            # 安全处理时间值
+            # Safely handle time values
             prep_time = safe_time_value(prep_time)
             inf_time = safe_time_value(inf_time)
             post_time = safe_time_value(post_time)
@@ -273,7 +355,7 @@ class BenchmarkRunner:
             
             total_time = prep_time + inf_time + post_time + render_time
             
-            # 记录详细结果
+            # Record detailed results
             self.detailed_results.append({
                 'sample_id': i,
                 'preprocessing_time': prep_time,
@@ -290,12 +372,21 @@ class BenchmarkRunner:
             
             self.total_samples += 1
             
-            # 进度显示
-            if i % 10 == 0 or i == num_test_images - 1:
+            # Update progress bar information
+            if self.tqdm_available:
                 fps = 1000.0 / total_time if total_time > 0 else 0
-                progress = ((i + 1) / num_test_images) * 100
-                self.logger.info(f"YOLO检测进度: {i + 1}/{num_test_images} 图像 ({progress:.1f}%), 当前FPS: {fps:.1f}")
-                print(f"Processed {i + 1}/{num_test_images} images ({progress:.1f}%)... 当前FPS: {fps:.1f}")
+                progress_bar.set_postfix({'FPS': f'{fps:.1f}'})
+            else:
+                # Traditional progress display (reduced frequency)
+                if i % 50 == 0 or i == num_test_images - 1:
+                    fps = 1000.0 / total_time if total_time > 0 else 0
+                    progress = ((i + 1) / num_test_images) * 100
+                    self.logger.info(f"YOLO detection progress: {i + 1}/{num_test_images} images ({progress:.1f}%), current FPS: {fps:.1f}")
+                    print(f"Processed {i + 1}/{num_test_images} images ({progress:.1f}%)... current FPS: {fps:.1f}")
+        
+        # Close progress bar
+        if self.tqdm_available:
+            progress_bar.close()
         
         return {
             'preprocessing_times': preprocessing_times,
@@ -305,8 +396,8 @@ class BenchmarkRunner:
         }
     
     def _run_torchvision_detection_benchmark(self, dataloader, num_test_images):
-        """运行Torchvision检测基准测试"""
-        self.logger.info("使用Torchvision模型进行检测测试")
+        """Run Torchvision detection benchmark test"""
+        self.logger.info("Using Torchvision model for detection testing")
         
         preprocessing_times = []
         inference_times = []
@@ -314,9 +405,27 @@ class BenchmarkRunner:
         rendering_times = []
         
         self.model.eval()
+        
+        # Calculate total iterations
+        if self.test_samples == -1:
+            total_iterations = len(dataloader)
+        else:
+            total_iterations = min(num_test_images, self.test_samples)
+        
+        # Use tqdm or traditional progress display
+        if self.tqdm_available:
+            progress_bar = self.tqdm(
+                total=total_iterations,
+                desc="Processing images",
+                unit="images",
+                disable=False
+            )
+        else:
+            progress_bar = None
+        
         with torch.no_grad():
             for batch_idx, (data, target) in enumerate(dataloader):
-                # 预处理时间
+                # Preprocessing time
                 prep_start = time.time()
                 data = data.to(self.device)
                 if data.dim() == 4 and data.size(0) == 1:
@@ -325,38 +434,38 @@ class BenchmarkRunner:
                     data_list = [img for img in data]
                 prep_time = (time.time() - prep_start) * 1000
                 
-                # 推理时间
+                # Inference time
                 inf_start = time.time()
                 try:
                     predictions = self.model(data_list)
                     inf_time = (time.time() - inf_start) * 1000
                 except Exception as e:
-                    self.logger.error(f"Torchvision检测推理过程中出错: {e}")
+                    self.logger.error(f"Error during Torchvision detection inference: {e}")
                     raise e
                 
-                # 后处理时间
+                # Postprocessing time
                 post_start = time.time()
-                post_time = (time.time() - post_start) * 1000 + 1.0  # 假设后处理时间
+                post_time = (time.time() - post_start) * 1000 + 1.0  # Assume postprocessing time
                 
-                # 渲染时间
+                # Rendering time
                 render_start = time.time()
                 try:
                     rendered_image = self.rendering_engine.render_detection_result(data_list[0], predictions)
                     render_time = (time.time() - render_start) * 1000
                 except Exception as e:
-                    self.logger.warning(f"Torchvision检测渲染失败: {e}")
+                    self.logger.warning(f"Torchvision detection rendering failed: {e}")
                     render_time = 0.0
                 
                 total_time = prep_time + inf_time + post_time + render_time
                 
-                # 安全处理时间值
+                # Safely handle time values
                 prep_time = safe_time_value(prep_time)
                 inf_time = safe_time_value(inf_time)
                 post_time = safe_time_value(post_time)
                 render_time = safe_time_value(render_time)
                 total_time = safe_time_value(total_time)
                 
-                # 记录详细结果
+                # Record detailed results
                 self.detailed_results.append({
                     'sample_id': batch_idx,
                     'preprocessing_time': prep_time,
@@ -373,16 +482,26 @@ class BenchmarkRunner:
                 
                 self.total_samples += 1
                 
-                # 进度显示
-                if batch_idx % 10 == 0:
+                # Update progress bar information
+                if self.tqdm_available and progress_bar:
                     fps = 1000.0 / total_time if total_time > 0 else 0
-                    progress = (self.total_samples / num_test_images) * 100
-                    self.logger.info(f"Torchvision检测进度: {self.total_samples}/{num_test_images} 图像 ({progress:.1f}%), 当前FPS: {fps:.1f}")
-                    print(f"Processed {self.total_samples}/{num_test_images} images ({progress:.1f}%)... 当前FPS: {fps:.1f}")
+                    progress_bar.set_postfix({'FPS': f'{fps:.1f}'})
+                    progress_bar.update(1)
+                else:
+                    # Traditional progress display (reduced frequency)
+                    if batch_idx % 50 == 0:
+                        fps = 1000.0 / total_time if total_time > 0 else 0
+                        progress = (self.total_samples / num_test_images) * 100
+                        self.logger.info(f"Torchvision detection progress: {self.total_samples}/{num_test_images} images ({progress:.1f}%), current FPS: {fps:.1f}")
+                        print(f"Processed {self.total_samples}/{num_test_images} images ({progress:.1f}%)... current FPS: {fps:.1f}")
                 
-                # 限制测试样本数
+                # Limit test sample count
                 if self.test_samples != -1 and self.total_samples >= self.test_samples:
                     break
+        
+        # Close progress bar
+        if self.tqdm_available and progress_bar:
+            progress_bar.close()
         
         return {
             'preprocessing_times': preprocessing_times,
@@ -392,7 +511,7 @@ class BenchmarkRunner:
         }
     
     def _record_batch_results(self, data, prep_time, inf_time, post_time, render_time, batch_time):
-        """记录批次详细结果"""
+        """Record batch detailed results"""
         batch_size = len(data)
         if batch_size > 0:
             for i in range(batch_size):
@@ -402,7 +521,7 @@ class BenchmarkRunner:
                 sample_render_time = render_time / batch_size
                 sample_total_time = batch_time / batch_size
                 
-                # 确保每个样本时间都是合理的
+                # Ensure each sample time is reasonable
                 sample_prep_time = safe_time_value(sample_prep_time)
                 sample_inf_time = safe_time_value(sample_inf_time)
                 sample_post_time = safe_time_value(sample_post_time)
@@ -419,9 +538,9 @@ class BenchmarkRunner:
                 })
     
     def _extract_yolo_timing(self, results, total_elapsed):
-        """提取YOLO时间信息"""
+        """Extract YOLO timing information"""
         prep_time = 0.0
-        inf_time = total_elapsed  # 默认值
+        inf_time = total_elapsed  # Default value
         post_time = 0.0
         
         if hasattr(results[0], 'speed'):
@@ -433,7 +552,7 @@ class BenchmarkRunner:
         return prep_time, inf_time, post_time
     
     def _calculate_test_images_count(self, dataloader, test_images):
-        """计算实际测试图像数量"""
+        """Calculate actual test image count"""
         if hasattr(self, 'test_images') or test_images:
             available_images = len(test_images) if test_images else len(self.test_images)
             if self.test_samples == -1:
@@ -448,19 +567,20 @@ class BenchmarkRunner:
                 return min(self.test_samples, dataset_size)
     
     def _print_progress(self, fps):
-        """打印进度信息"""
+        """Print progress information (only used when tqdm is not available)"""
         if self.test_samples == -1:
-            self.logger.info(f"处理进度: {self.total_samples} 样本, 当前FPS: {fps:.1f}")
-            print(f"Processed {self.total_samples} samples... 当前FPS: {fps:.1f}")
+            self.logger.info(f"Processing progress: {self.total_samples} samples, current FPS: {fps:.1f}")
+            print(f"Processed {self.total_samples} samples... current FPS: {fps:.1f}")
         else:
             progress = (self.total_samples / self.test_samples) * 100
-            self.logger.info(f"处理进度: {self.total_samples}/{self.test_samples} 样本 ({progress:.1f}%), 当前FPS: {fps:.1f}")
-            print(f"Processed {self.total_samples}/{self.test_samples} samples ({progress:.1f}%)... 当前FPS: {fps:.1f}")
+            self.logger.info(f"Processing progress: {self.total_samples}/{self.test_samples} samples ({progress:.1f}%), current FPS: {fps:.1f}")
+            print(f"Processed {self.total_samples}/{self.test_samples} samples ({progress:.1f}%)... current FPS: {fps:.1f}")
     
     def _should_stop_testing(self):
-        """检查是否应该停止测试"""
+        """Check if testing should be stopped"""
         if self.test_samples != -1 and self.total_samples >= self.test_samples:
-            self.logger.info(f"达到目标样本数 {self.test_samples}，测试完成")
-            print(f"达到目标样本数 {self.test_samples}，测试完成")
+            self.logger.info(f"Reached target sample count {self.test_samples}, testing completed")
+            if not self.tqdm_available:
+                print(f"Reached target sample count {self.test_samples}, testing completed")
             return True
         return False
