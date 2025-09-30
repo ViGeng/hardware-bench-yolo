@@ -78,7 +78,7 @@ python main.py \
 
 **Chart Generation**:
 ```bash
-    --plot
+    python main.py --plot
 ```
 
 **Silent Mode (reduced output)**:
