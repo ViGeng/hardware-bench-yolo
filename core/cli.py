@@ -26,22 +26,22 @@ class CommandLineInterface:
             epilog="""
 Example usage:
   # Test ResNet18 classification model using CPU
-  python main.py --device cpu --model-type classification --model resnet18 --dataset MNIST --samples 100
+  python main.py --device cpu --task classification --model resnet18 --dataset MNIST --samples 100
   
   # Test YOLOv8 detection model using GPU  
-  python main.py --device cuda:0 --model-type detection --model yolov8n --dataset Test-Images --samples 500
+  python main.py --device cuda:0 --task detection --model yolov8n --dataset Test-Images --samples 500
   
   # Test with local model file
-  python main.py --device auto --model-type detection --model ~/models/my_yolo.pt --dataset Test-Images --samples 100
+  python main.py --device auto --task detection --model ~/models/my_yolo.pt --dataset Test-Images --samples 100
   
   # Test with model from URL
-  python main.py --device auto --model-type detection --model https://example.com/models/yolo.pt --dataset Test-Images --samples 100
+  python main.py --device auto --task detection --model https://example.com/models/yolo.pt --dataset Test-Images --samples 100
   
   # Test segmentation model with auto device selection
-  python main.py --device auto --model-type segmentation --model unet_resnet34 --dataset Synthetic-Segmentation --samples 200
+  python main.py --device auto --task segmentation --model unet_resnet34 --dataset Synthetic-Segmentation --samples 200
   
   # Generate visualization plots
-  python main.py --device auto --model-type classification --model resnet18 --dataset MNIST --samples 100 --plot
+  python main.py --device auto --task classification --model resnet18 --dataset MNIST --samples 100 --plot
   
   # List available models
   python main.py --list-models
@@ -61,9 +61,9 @@ Example usage:
                                '  auto - Auto selection (use GPU if available, otherwise CPU)\n'
                                '  (default: auto)')
         
-        parser.add_argument('--model-type', 
+        parser.add_argument('--task', 
                           choices=['classification', 'detection', 'segmentation'],
-                          help='Model type (required)\n'
+                          help='Task type (required)\n'
                                '  classification - Image classification tasks\n'
                                '  detection - Object detection tasks\n'
                                '  segmentation - Semantic segmentation tasks')
@@ -137,7 +137,7 @@ Example usage:
         
         # Classification models
         print("\nImage Classification Models (Classification):")
-        print("Usage: --model-type classification --model <model_name>")
+        print("Usage: --task classification --model <model_name>")
         if validate_model_availability('classification', self.dependencies):
             for key, model in CLASSIFICATION_MODELS.items():
                 status = "✓" if self.dependencies['timm'] else "✗"
@@ -147,7 +147,7 @@ Example usage:
         
         # Detection models
         print("\nObject Detection Models (Detection):")
-        print("Usage: --model-type detection --model <model_name>")
+        print("Usage: --task detection --model <model_name>")
         if validate_model_availability('detection', self.dependencies):
             for key, model in DETECTION_MODELS.items():
                 if model['type'] == 'yolo':
@@ -176,7 +176,7 @@ Example usage:
         
         # Segmentation models
         print("\nSemantic Segmentation Models (Segmentation):")
-        print("Usage: --model-type segmentation --model <model_name>")
+        print("Usage: --task segmentation --model <model_name>")
         if validate_model_availability('segmentation', self.dependencies):
             for key, model in SEGMENTATION_MODELS.items():
                 status = "✓" if self.dependencies['smp'] else "✗"
@@ -204,29 +204,29 @@ Example usage:
         print("Available Datasets List:")
         print("="*60)
         
-        print("\nClassification Datasets (--model-type classification):")
+        print("\nClassification Datasets (--task classification):")
         print("  MNIST              - Handwritten digit recognition (28x28 -> 224x224)")
         print("  CIFAR-10           - Small object classification (32x32 -> 224x224)")
         print("  ImageNet-Sample    - Synthetic ImageNet samples (224x224)")
         
-        print("\nDetection Datasets (--model-type detection):")
+        print("\nDetection Datasets (--task detection):")
         print("  COCO-Sample        - Synthetic COCO samples")
         print("  KITTI              - Autonomous driving scene data")
         print("  Test-Images        - Preset test images")
         
-        print("\nSegmentation Datasets (--model-type segmentation):")
+        print("\nSegmentation Datasets (--task segmentation):")
         print("  Cityscapes         - Urban street scene segmentation")
         print("  Synthetic-Segmentation - Synthetic segmentation data")
         
         print("\nUsage Examples:")
         print("  # Built-in model")
-        print("  python main.py --model-type classification --model resnet18 --dataset MNIST --device auto")
+        print("  python main.py --task classification --model resnet18 --dataset MNIST --device auto")
         print("  \n  # Local model file")
-        print("  python main.py --model-type detection --model ~/models/my_yolo.pt --dataset Test-Images --device cuda:0")
+        print("  python main.py --task detection --model ~/models/my_yolo.pt --dataset Test-Images --device cuda:0")
         print("  \n  # Model from URL")
-        print("  python main.py --model-type detection --model https://example.com/yolo.pt --dataset Test-Images --device auto")
+        print("  python main.py --task detection --model https://example.com/yolo.pt --dataset Test-Images --device auto")
         print("  \n  # With visualization plots")
-        print("  python main.py --model-type classification --model resnet18 --dataset MNIST --device auto --plot")
+        print("  python main.py --task classification --model resnet18 --dataset MNIST --device auto --plot")
     
     def _is_url(self, path_str):
         """Check if string is a URL"""
@@ -260,18 +260,18 @@ Example usage:
         if args.device == 'cuda:0' and not torch.cuda.is_available():
             errors.append("Specified CUDA device but CUDA is not available. Please use --device cpu or --device auto")
         
-        # Validate model type availability
-        if args.model_type:
-            if not validate_model_availability(args.model_type, self.dependencies):
-                if args.model_type == 'classification':
+        # Validate task availability
+        if args.task:
+            if not validate_model_availability(args.task, self.dependencies):
+                if args.task == 'classification':
                     errors.append("Classification models unavailable, required installation: pip install timm")
-                elif args.model_type == 'detection':
+                elif args.task == 'detection':
                     errors.append("Detection models unavailable, required installation: pip install ultralytics")
-                elif args.model_type == 'segmentation':
+                elif args.task == 'segmentation':
                     errors.append("Segmentation models unavailable, required installation: pip install segmentation-models-pytorch")
         
         # Validate model name (relaxed for custom paths/URLs)
-        if args.model_type and args.model:
+        if args.task and args.model:
             # If it's a URL or path, do basic validation
             if self._is_url(args.model):
                 # URL validation - just check if it looks like a valid URL
@@ -286,18 +286,18 @@ Example usage:
                     errors.append(f"Original path: {args.model}")
             else:
                 # Otherwise, validate as model name
-                valid_model = self._validate_model_name(args.model_type, args.model)
+                valid_model = self._validate_model_name(args.task, args.model)
                 if not valid_model:
                     errors.append(f"Invalid model name: {args.model}")
-                    errors.append(f"Please use --list-models to see available models for {args.model_type} type")
+                    errors.append(f"Please use --list-models to see available models for {args.task} type")
                     errors.append(f"Or specify a local path (~/models/model.pt) or URL (https://...)")
         
         # Validate dataset name
-        if args.model_type and args.dataset:
-            valid_dataset = self._validate_dataset_name(args.model_type, args.dataset)
+        if args.task and args.dataset:
+            valid_dataset = self._validate_dataset_name(args.task, args.dataset)
             if not valid_dataset:
                 errors.append(f"Invalid dataset name: {args.dataset}")
-                errors.append(f"Please use --list-datasets to see available datasets for {args.model_type} type")
+                errors.append(f"Please use --list-datasets to see available datasets for {args.task} type")
         
         # Validate sample count
         if args.samples < -1 or args.samples == 0:
@@ -305,13 +305,13 @@ Example usage:
         
         return errors
     
-    def _validate_model_name(self, model_type, model_name):
+    def _validate_model_name(self, task, model_name):
         """Validate if model name is valid"""
-        if model_type == 'classification':
+        if task == 'classification':
             valid_models = [model['model'] for model in CLASSIFICATION_MODELS.values()]
             return model_name in valid_models
         
-        elif model_type == 'detection':
+        elif task == 'detection':
             valid_models = []
             for model in DETECTION_MODELS.values():
                 if model['type'] == 'yolo':
@@ -325,7 +325,7 @@ Example usage:
                     valid_models.append(model['model'].replace('_', '-'))
             return model_name in valid_models
         
-        elif model_type == 'segmentation':
+        elif task == 'segmentation':
             valid_models = []
             for model in SEGMENTATION_MODELS.values():
                 model_id = f"{model['model'].lower()}_{model['encoder'].replace('-', '_')}"
@@ -334,7 +334,7 @@ Example usage:
         
         return False
     
-    def _validate_dataset_name(self, model_type, dataset_name):
+    def _validate_dataset_name(self, task, dataset_name):
         """Validate if dataset name is valid"""
         valid_datasets = {
             'classification': ['MNIST', 'CIFAR-10', 'ImageNet-Sample'],
@@ -342,7 +342,7 @@ Example usage:
             'segmentation': ['Cityscapes', 'Synthetic-Segmentation']
         }
         
-        return dataset_name in valid_datasets.get(model_type, [])
+        return dataset_name in valid_datasets.get(task, [])
     
     def args_to_config(self, args):
         """Convert command line arguments to configuration object"""
@@ -367,12 +367,12 @@ Example usage:
         self.logger.info(f"Device selection: {device} ({device_choice_reason})")
         
         # Find model information
-        model_info = self._find_model_info(args.model_type, args.model)
+        model_info = self._find_model_info(args.task, args.model)
         
         config = {
             'device': device,
             'device_choice_reason': device_choice_reason,
-            'model_type': args.model_type,
+            'task': args.task,
             'model_info': model_info,
             'dataset_name': args.dataset,
             'test_samples': args.samples,
@@ -384,7 +384,7 @@ Example usage:
         
         return config
     
-    def _find_model_info(self, model_type, model_name):
+    def _find_model_info(self, task, model_name):
         """Find model information based on model name"""
         # Check if it's a URL or local path
         if self._is_url(model_name) or self._is_local_path(model_name):
@@ -392,17 +392,17 @@ Example usage:
             return {
                 'name': f'Custom Model: {os.path.basename(model_name)}',
                 'model': model_name,
-                'type': self._infer_model_framework(model_type, model_name),
+                'type': self._infer_model_framework(task, model_name),
                 'custom_path': model_name  # Store the original path/URL
             }
         
         # Otherwise, look up in predefined models
-        if model_type == 'classification':
+        if task == 'classification':
             for model in CLASSIFICATION_MODELS.values():
                 if model['model'] == model_name:
                     return model
         
-        elif model_type == 'detection':
+        elif task == 'detection':
             for model in DETECTION_MODELS.values():
                 if model['type'] == 'yolo':
                     # Support both yolov8n and yolov8n.pt formats
@@ -414,7 +414,7 @@ Example usage:
                     if model['model'] == model_name or model['model'].replace('_', '-') == model_name:
                         return model
         
-        elif model_type == 'segmentation':
+        elif task == 'segmentation':
             for model in SEGMENTATION_MODELS.values():
                 model_id = f"{model['model'].lower()}_{model['encoder'].replace('-', '_')}"
                 if model_id == model_name:
@@ -422,11 +422,11 @@ Example usage:
         
         return None
     
-    def _infer_model_framework(self, model_type, model_path):
-        """Infer model framework based on model type and path"""
-        if model_type == 'classification':
+    def _infer_model_framework(self, task, model_path):
+        """Infer model framework based on task and path"""
+        if task == 'classification':
             return 'timm'
-        elif model_type == 'detection':
+        elif task == 'detection':
             # Check filename for hints
             path_lower = model_path.lower()
             if 'yolo' in path_lower:
@@ -436,7 +436,7 @@ Example usage:
             else:
                 # Default to YOLO for detection
                 return 'yolo'
-        elif model_type == 'segmentation':
+        elif task == 'segmentation':
             return 'smp'
         
         return 'unknown'
@@ -452,7 +452,7 @@ Example usage:
                 device_name = torch.cuda.get_device_name(0)
                 memory_gb = torch.cuda.get_device_properties(0).total_memory / (1024**3)
                 print(f"GPU Info: {device_name} ({memory_gb:.1f}GB)")
-            print(f"Model Type: {config['model_type']}")
+            print(f"Task: {config['task']}")
             print(f"Model: {config['model_info']['name']}")
             if 'custom_path' in config['model_info']:
                 print(f"Model Source: {config['model_info']['custom_path']}")

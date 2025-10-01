@@ -10,8 +10,8 @@ Features:
 4. Resource monitoring
 
 Command line usage examples:
-python main.py --device cuda:0 --model-type classification --model resnet18 --dataset MNIST --samples 100
-python main.py --device cpu --model-type detection --model yolov8n --dataset Test-Images --samples 500
+python main.py --device cuda:0 --task classification --model resnet18 --dataset MNIST --samples 100
+python main.py --device cpu --task detection --model yolov8n --dataset Test-Images --samples 500
 python main.py --list-models
 python main.py --list-datasets
 
@@ -78,7 +78,7 @@ class BenchmarkManager:
         self.logger.info("=" * 60)
         
         # Basic configuration
-        self.logger.info(f"Model Type: {config['model_type']}")
+        self.logger.info(f"Task: {config['task']}")
         self.logger.info(f"Model Name: {config['model_info']['name']}")
         self.logger.info(f"Model ID: {config['model_info']['model']}")
         if 'type' in config['model_info']:
@@ -175,15 +175,15 @@ class BenchmarkManager:
                 return
             
             # Validate basic parameters
-            if not (args.model_type and args.model and args.dataset):
-                print("Error: Must specify --model-type, --model and --dataset parameters")
+            if not (args.task and args.model and args.dataset):
+                print("Error: Must specify --task, --model and --dataset parameters")
                 print("Use --help to see complete parameter description")
                 print("Use --list-models to see available models")
                 print("Use --list-datasets to see available datasets")
                 print()
                 print("Examples:")
-                print("  python main.py --device cpu --model-type classification --model resnet18 --dataset MNIST ")
-                print("  python main.py --device cuda:0 --model-type detection --model yolov8n --dataset Test-Images ")
+                print("  python main.py --device cpu --task classification --model resnet18 --dataset MNIST ")
+                print("  python main.py --device cuda:0 --task detection --model yolov8n --dataset Test-Images ")
                 sys.exit(1)
             
             # Run command line mode
@@ -294,17 +294,17 @@ class BenchmarkManager:
     def _load_dataset(self):
         """Load dataset"""
         dataset_name = self.configuration['dataset_name']
-        model_type = self.configuration['model_type']
+        task = self.configuration['task']
         
         self.logger.info("=" * 50)
-        self.logger.info(f"Starting to load dataset: {dataset_name} (for {model_type} task)")
+        self.logger.info(f"Starting to load dataset: {dataset_name} (for {task} task)")
         self.logger.info("=" * 50)
         
         if not self.configuration.get('quiet', False):
             print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Loading dataset: {dataset_name}")
         
         try:
-            if model_type == 'classification':
+            if task == 'classification':
                 if dataset_name == 'MNIST':
                     self.dataloader = self.dataset_loader.load_mnist()
                 elif dataset_name == 'CIFAR-10':
@@ -314,7 +314,7 @@ class BenchmarkManager:
                 else:
                     raise ValueError(f"Unknown classification dataset: {dataset_name}")
             
-            elif model_type == 'detection':
+            elif task == 'detection':
                 if dataset_name == 'KITTI':
                     self.dataloader = self.dataset_loader.load_kitti()
                 elif dataset_name in ['COCO-Sample', 'Test-Images']:
@@ -322,7 +322,7 @@ class BenchmarkManager:
                 else:
                     raise ValueError(f"Unknown detection dataset: {dataset_name}")
             
-            elif model_type == 'segmentation':
+            elif task == 'segmentation':
                 if dataset_name == 'Cityscapes':
                     self.dataloader = self.dataset_loader.load_cityscapes()
                 elif dataset_name == 'Synthetic-Segmentation':
@@ -340,11 +340,11 @@ class BenchmarkManager:
     def _load_model(self):
         """Load model"""
         model_info = self.configuration['model_info']
-        model_type = self.configuration['model_type']
+        task = self.configuration['task']
         device = self.configuration['device']
         
         self.logger.info("=" * 50)
-        self.logger.info(f"Starting to load model: {model_info['name']} (type: {model_type}, device: {device})")
+        self.logger.info(f"Starting to load model: {model_info['name']} (task: {task}, device: {device})")
         self.logger.info("=" * 50)
         
         if not self.configuration.get('quiet', False):
@@ -352,7 +352,7 @@ class BenchmarkManager:
         
         try:
             self.model = self.model_loader.load_model(
-                model_type,
+                task,
                 model_info
             )
             self.logger.info(f"Model {model_info['name']} loaded successfully, deployed to device {device}")
@@ -365,12 +365,12 @@ class BenchmarkManager:
     def _run_benchmark(self):
         """Run benchmark test"""
         model_info = self.configuration['model_info']
-        model_type = self.configuration['model_type']
+        task = self.configuration['task']
         test_samples = self.configuration['test_samples']
         
         self.logger.info("=" * 50)
         self.logger.info(f"Starting benchmark test")
-        self.logger.info(f"Model: {model_info['name']} ({model_type})")
+        self.logger.info(f"Model: {model_info['name']} ({task})")
         self.logger.info(f"Dataset: {self.configuration['dataset_name']}")
         self.logger.info(f"Planned test samples: {test_samples if test_samples != -1 else 'All'}")
         self.logger.info("=" * 50)
@@ -388,7 +388,7 @@ class BenchmarkManager:
             # Create benchmark runner
             self.benchmark_runner = BenchmarkRunner(
                 model=self.model,
-                model_type=model_type,
+                model_type=task,
                 model_info=model_info,
                 device=self.configuration['device'],
                 rendering_engine=self.rendering_engine,
@@ -396,11 +396,11 @@ class BenchmarkManager:
             )
             
             # Run corresponding benchmark type
-            if model_type == 'classification':
+            if task == 'classification':
                 timing_results = self.benchmark_runner.run_classification_benchmark(self.dataloader)
-            elif model_type == 'detection':
+            elif task == 'detection':
                 timing_results = self.benchmark_runner.run_detection_benchmark(self.dataloader, self.test_images)
-            elif model_type == 'segmentation':
+            elif task == 'segmentation':
                 timing_results = self.benchmark_runner.run_segmentation_benchmark(self.dataloader)
             
             end_time = time.time()
@@ -426,7 +426,7 @@ class BenchmarkManager:
                 timing_results=timing_results,
                 total_time=total_time,
                 total_samples=actual_samples,
-                model_type=model_type,
+                model_type=task,
                 model_info=model_info,
                 dataset_name=self.configuration['dataset_name'],
                 device=self.configuration['device'],
@@ -457,7 +457,7 @@ class BenchmarkManager:
     
     def _save_results_and_visualizations(self, stats):
         """Save results and generate visualizations"""
-        model_type = self.configuration['model_type']
+        task = self.configuration['task']
         output_dir = self.configuration.get('output_dir', './results')
         
         try:
@@ -473,7 +473,7 @@ class BenchmarkManager:
             )
             
             # Save CSV results
-            csv_filenames = exporter.save_detailed_csv_results(stats, model_type)
+            csv_filenames = exporter.save_detailed_csv_results(stats, task)
             
             # Create visualizations (if enabled)
             plot_files = []
@@ -482,7 +482,7 @@ class BenchmarkManager:
                     detailed_results=self.benchmark_runner.detailed_results,
                     results_dir=output_dir
                 )
-                plot_files = visualizer.create_visualizations(stats, model_type)
+                plot_files = visualizer.create_visualizations(stats, task)
             else:
                 self.logger.info("User has not enabled plot generation")
             

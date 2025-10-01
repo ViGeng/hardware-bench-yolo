@@ -9,14 +9,8 @@ A deep learning model performance benchmarking tool that supports image classifi
 - CUDA-supported GPU (optional, for GPU acceleration)
 - Recommended memory: 8GB+ (depends on model size)
 
-## Installation Guide
 
-### 1. Clone Project
-```bash
-git clone https://github.com/Zihan-D/hardware-bench-yolo.git
-```
-
-### 2. Install Basic Dependencies
+### Install Basic Dependencies
 ```bash
 pip install -r requirements.txt
 ```
@@ -35,12 +29,30 @@ python main.py --list-datasets
 python main.py --help
 ```
 
+
+## Possible Questions
+
+**CUDA Related Errors**
+```bash
+# Check if CUDA is available
+python -c "import torch; print(torch.cuda.is_available())"
+```
+
+
+**Permission Issues (Windows)**
+```bash
+# Run command prompt as administrator
+# Or modify output directory to a directory with write permissions
+python main.py --output-dir C:\Users\YourName\benchmark_results ...
+```
+
+
 ## Command Line Examples
 
 **Quick Test (CPU, 100 samples, classification)**:
 ```bash
 python main.py \
-    --model-type classification \
+    --task classification \
     --model resnet18 \
     --dataset MNIST \
     --device cpu \
@@ -50,7 +62,7 @@ python main.py \
 **GPU Accelerated Test(detection)**:
 ```bash
 python main.py \
-    --model-type detection \
+    --task detection \
     --model fasterrcnn-resnet50-fpn \
     --dataset COCO-Sample \
     --device cuda:0 \
@@ -60,7 +72,7 @@ python main.py \
 **Large Scale Test (automatic device selection,segmentation)**:
 ```bash
 python main.py \
-    --model-type segmentation \
+    --task segmentation \
     --model unet_resnet34 \
     --dataset Synthetic-Segmentation \
     --device auto \
@@ -72,7 +84,7 @@ python main.py \
 
 **Custom Output Directory**:
 ```bash
-    --output-dir ./my_results
+    python main.py --output-dir ./my_results
 ```
 
 
@@ -93,70 +105,44 @@ python main.py \
 
 ## Model and Dataset Support
 
-| Task Type | Supported Models | Datasets | CPU Support |
+| Task | Supported Models | Datasets | CPU Support |
 |-----------|------------------|----------|-------------|
-| Image Classification | ResNet, EfficientNet, ViT, MobileNet | MNIST, CIFAR-10, ImageNet-Sample | ✓ |
-| Object Detection | YOLOv8, Faster R-CNN, FCOS | COCO-Sample, KITTI, Test-Images | ✓ |
-| Semantic Segmentation | U-Net, DeepLabV3+, PSPNet, FPN | Cityscapes, Synthetic-Segmentation | ✓ |
+| Classification | ResNet, EfficientNet, ViT, MobileNet | MNIST, CIFAR-10, ImageNet-Sample | ✓ |
+| Detection | YOLOv8, Faster R-CNN, FCOS | COCO-Sample, KITTI, Test-Images | ✓ |
+| Segmentation | U-Net, DeepLabV3+, PSPNet, FPN | Cityscapes, Synthetic-Segmentation | ✓ |
 
 
 ##  specifying models by name, local path, or URL
 
 # Model by name (existing functionality)
-python main.py --model-type detection --model yolov8n --dataset Test-Images
+python main.py --task detection --model yolov8n --dataset Test-Images
 
 # Local path with tilde expansion
-python main.py --model-type detection --model ~/models/my_yolo.pt --dataset Test-Images
+python main.py --task detection --model ~/models/my_yolo.pt --dataset Test-Images
 
 # Relative path
-python main.py --model-type detection --model ./checkpoints/best.pth --dataset Test-Images
+python main.py --task detection --model ./checkpoints/best.pth --dataset Test-Images
 
 # Absolute path
-python main.py --model-type classification --model /home/user/models/resnet.pth --dataset MNIST
+python main.py --task classification --model /home/user/models/resnet.pth --dataset MNIST
 
 # URL
-python main.py --model-type detection --model https://example.com/models/yolo.pt --dataset Test-Images
+python main.py --task detection --model https://example.com/models/yolo.pt --dataset Test-Images
 
 
 
-### Q&A
+## Limitations
+-The current implementation only supports specific model formats (PyTorch .pt/.pth files, YOLO models, and framework-specific architectures).
 
-**1. CUDA Related Errors**
-```bash
-# Check if CUDA is available
-python -c "import torch; print(torch.cuda.is_available())"
+- The current statistical reporting is limited to mean, standard deviation, min, and max values. The tool lacks advanced performance analysis including percentile distributions, confidence intervals, statistical significance testing, and performance regression detection across multiple runs.
 
-# If not available, use CPU
-python main.py --device cpu ...
-```
+- The implementation assumes single-device execution and lacks support for distributed inference, multi-GPU benchmarking, or batch parallelization strategies that would be essential for evaluating large-scale deployment scenarios.
 
-**2. Model Download Failures**
-```bash
-# Check network connection, models will be automatically downloaded from the internet
-# YOLO models will be downloaded to ~/.cache/ultralytics/
-# TIMM models will be downloaded to ~/.cache/torch/
-```
 
-**3. Out of Memory**
-```bash
-# Reduce the number of samples
-python main.py --samples 50 ...
 
-# Use smaller models
-python main.py --model resnet18 ...  # 而不是 resnet50
-```
+## Future work
+- Model Optimization Integration: Implement support for quantized models (INT8, FP16), pruned networks, and knowledge-distilled architectures to enable realistic performance comparisons between optimized and baseline models.
 
-**4. Missing Dependencies**
-```bash
-# Install corresponding libraries based on error messages
-pip install timm  # for classification models
-pip install ultralytics  # for YOLO detection
-pip install segmentation-models-pytorch  # for segmentation models
-```
+- Energy Efficiency Metrics: Extend monitoring to include power consumption measurements and energy-per-inference metrics, which are increasingly critical for edge deployment and sustainability considerations.
 
-**5. Permission Issues (Windows)**
-```bash
-# Run command prompt as administrator
-# Or modify output directory to a directory with write permissions
-python main.py --output-dir C:\Users\YourName\benchmark_results ...
-```
+- Asynchronous Inference Profiling: Develop tools to measure pipeline parallelism, async data loading efficiency, and queue management overhead that are critical for production inference servers.
