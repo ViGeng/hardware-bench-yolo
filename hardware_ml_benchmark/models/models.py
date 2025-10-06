@@ -9,8 +9,8 @@ import time
 import torch
 import torchvision.models.detection as detection_models
 from pathlib import Path
-from hardware_benchmark.core.config import DETECTION_MODELS, CLASSIFICATION_MODELS, SEGMENTATION_MODELS
-from hardware_benchmark.core.utils import check_dependencies
+from hardware_ml_benchmark.core.config import DETECTION_MODELS, CLASSIFICATION_MODELS, SEGMENTATION_MODELS
+from hardware_ml_benchmark.core.utils import check_dependencies
 
 # Check dependencies
 dependencies = check_dependencies()

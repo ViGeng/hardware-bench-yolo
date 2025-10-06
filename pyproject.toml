@@ -3,14 +3,14 @@ requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "hardware-benchmark"
-version = "0.1.3"
+name = "hardware-ml-benchmark"
+version = "0.1.4"
 description = "A deep learning model hardware benchmarking tool"
 readme = "README.md"
 authors = [
     {name = "zihan.deng", email = "zihan.deng0517@gmail.com"}
 ]
-keywords = ["deep learning", "benchmark", "pytorch", "performance", "AI", "python"]
+keywords = ["deep learning", "machine learning", "hardware", "benchmark", "pytorch", "performance", "AI", "python"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -50,7 +50,7 @@ dev = [
 ]
 
 [project.scripts]
-hardware-benchmark = "hardware_benchmark.main:main"
+hardware-ml-benchmark = "hardware_ml_benchmark.main:main"
 
 [project.urls]
 Repository = "https://github.com/Zihan-D/hardware-bench-yolo.git"

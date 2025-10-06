@@ -14,8 +14,8 @@ def read_requirements():
         return [line.strip() for line in fh if line.strip() and not line.startswith("#")]
 
 setup(
-    name="hardware-benchamrk",
-    version="0.1.3",
+    name="hardware-ml-benchamrk",
+    version="0.1.4",
     author="zihan.deng",
     author_email="zihan.deng0517@gmail.com",
     description="A deep learning model hardware benchmarking tool",
@@ -23,7 +23,7 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/Zihan-D/hardware-bench-yolo",
     packages=find_packages(),
-    keywords=["deep learning", "benchmark", "yolo", "hardware", "python"],
+    keywords=["deep learning", "machine learning", "hardware", "benchmark", "pytorch", "performance", "AI", "python"],
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
@@ -68,7 +68,7 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "hardware-benchmark=hardware_benchmark.main:main",
+            "hardware-ml-benchmark=hardware_ml_benchmark.main:main",
         ],
     },
     include_package_data=True,

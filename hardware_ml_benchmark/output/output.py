@@ -9,7 +9,7 @@ import time
 import socket
 import logging
 import numpy as np
-from hardware_benchmark.core.utils import check_dependencies
+from hardware_ml_benchmark.core.utils import check_dependencies
 
 # Check dependencies
 dependencies = check_dependencies()

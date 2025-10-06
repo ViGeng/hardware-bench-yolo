@@ -11,7 +11,7 @@ from collections import deque
 import numpy as np
 import torch
 import psutil
-from hardware_benchmark.core.utils import get_system_info, check_dependencies
+from hardware_ml_benchmark.core.utils import get_system_info, check_dependencies
 
 # Check dependencies
 dependencies = check_dependencies()

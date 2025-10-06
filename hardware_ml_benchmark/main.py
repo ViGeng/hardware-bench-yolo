@@ -10,10 +10,10 @@ Features:
 4. Resource monitoring
 
 Command line usage examples:
-hardware-benchmark --device cuda:0 --task classification --model resnet18 --dataset MNIST --samples 100
-hardware-benchmark --device cpu --task detection --model yolov8n --dataset Test-Images --samples 500
-hardware-benchmark --list-models
-hardware-benchmark --list-datasets
+python main.py --device cuda:0 --task classification --model resnet18 --dataset MNIST --samples 100
+python main.py --device cpu --task detection --model yolov8n --dataset Test-Images --samples 500
+python main.py --list-models
+python main.py --list-datasets
 
 """
 
@@ -23,14 +23,14 @@ import logging
 import os
 
 # Import custom modules
-from hardware_benchmark.core.utils import setup_logging, check_dependencies, print_dependency_status
-from hardware_benchmark.core.cli import CommandLineInterface
-from hardware_benchmark.data.datasets import DatasetLoader
-from hardware_benchmark.models.models import ModelLoader
-from hardware_benchmark.benchmark.rendering import RenderingEngine
-from hardware_benchmark.benchmark.benchmarks import BenchmarkRunner
-from hardware_benchmark.benchmark.monitoring import ResourceMonitor, StatisticsCalculator
-from hardware_benchmark.output.output import ResultExporter, Visualizer
+from hardware_ml_benchmark.core.utils import setup_logging, check_dependencies, print_dependency_status
+from hardware_ml_benchmark.core.cli import CommandLineInterface
+from hardware_ml_benchmark.data.datasets import DatasetLoader
+from hardware_ml_benchmark.models.models import ModelLoader
+from hardware_ml_benchmark.benchmark.rendering import RenderingEngine
+from hardware_ml_benchmark.benchmark.benchmarks import BenchmarkRunner
+from hardware_ml_benchmark.benchmark.monitoring import ResourceMonitor, StatisticsCalculator
+from hardware_ml_benchmark.output.output import ResultExporter, Visualizer
 
 class BenchmarkManager:
     """Benchmark test manager - main control class"""

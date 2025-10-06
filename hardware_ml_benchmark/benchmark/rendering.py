@@ -6,8 +6,8 @@ Rendering module - responsible for drawing output results of various models
 import logging
 import numpy as np
 import torch
-from hardware_benchmark.core.config import COCO_CLASSES, IMAGENET_CLASSES, CITYSCAPES_CLASSES, DETECTION_COLORS, CITYSCAPES_COLOR_MAP
-from hardware_benchmark.core.utils import check_dependencies
+from hardware_ml_benchmark.core.config import COCO_CLASSES, IMAGENET_CLASSES, CITYSCAPES_CLASSES, DETECTION_COLORS, CITYSCAPES_COLOR_MAP
+from hardware_ml_benchmark.core.utils import check_dependencies
 
 # Check dependencies
 dependencies = check_dependencies()

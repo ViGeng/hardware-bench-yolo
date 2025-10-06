@@ -7,7 +7,7 @@ import time
 import logging
 import numpy as np
 import torch
-from hardware_benchmark.core.utils import safe_time_value, check_dependencies
+from hardware_ml_benchmark.core.utils import safe_time_value, check_dependencies
 
 # Check dependencies
 dependencies = check_dependencies()

@@ -5,10 +5,11 @@ Command line interface module - handles command line arguments and parameter val
 
 import argparse
 import sys
+import os
 import torch
 import logging
-from hardware_benchmark.core.config import DETECTION_MODELS, CLASSIFICATION_MODELS, SEGMENTATION_MODELS, SAMPLE_OPTIONS
-from hardware_benchmark.models.models import validate_model_availability
+from hardware_ml_benchmark.core.config import DETECTION_MODELS, CLASSIFICATION_MODELS, SEGMENTATION_MODELS, SAMPLE_OPTIONS
+from hardware_ml_benchmark.models.models import validate_model_availability
 
 class CommandLineInterface:
     """Command line interface class"""
