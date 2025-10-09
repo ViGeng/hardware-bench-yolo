@@ -1,0 +1,61 @@
+name: Publish Package to PyPI
+
+on:
+  push:
+    tags:
+      - 'v*'  # Trigger on version tags like v1.0.0, v0.2.3, etc.
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    environment: release  # Use GitHub Environment for additional security
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+    
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine
+    
+    - name: Build package
+      run: |
+        rm -rf dist/ build/ *.egg-info/  # Clean previous builds
+        python -m build
+    
+    - name: Check package
+      run: |
+        twine check dist/*
+    
+    - name: Show built packages
+      run: |
+        echo "Built packages:"
+        ls -la dist/
+        
+        echo "Package contents:"
+        python -c "
+        import zipfile
+        import os
+        
+        for file in os.listdir('dist'):
+            if file.endswith('.whl'):
+                print(f'\\n=== Contents of {file} ===')
+                with zipfile.ZipFile(f'dist/{file}', 'r') as zip_file:
+                    for name in zip_file.namelist()[:20]:  # Show first 20 files
+                        print(f'  {name}')
+                break
+        "
+    
+    - name: Publish to PyPI
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+      run: |
+        echo "Publishing to production PyPI..."
+        twine upload --non-interactive dist/*

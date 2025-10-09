@@ -14,7 +14,6 @@ python -m hardware_ml_benchmark.main --device cuda:0 --task classification --mod
 python -m hardware_ml_benchmark.main --device cpu --task detection --model yolov8n --dataset Test-Images --samples 500
 python -m hardware_ml_benchmark.main --list-models
 python -m hardware_ml_benchmark.main --list-datasets
-
 """
 
 import logging
