@@ -10,27 +10,31 @@ Features:
 4. Resource monitoring
 
 Command line usage examples:
-python main.py --device cuda:0 --task classification --model resnet18 --dataset MNIST --samples 100
-python main.py --device cpu --task detection --model yolov8n --dataset Test-Images --samples 500
-python main.py --list-models
-python main.py --list-datasets
+python -m hardware_ml_benchmark.main --device cuda:0 --task classification --model resnet18 --dataset MNIST --samples 100
+python -m hardware_ml_benchmark.main --device cpu --task detection --model yolov8n --dataset Test-Images --samples 500
+python -m hardware_ml_benchmark.main --list-models
+python -m hardware_ml_benchmark.main --list-datasets
 
 """
 
-import sys
-import time
 import logging
 import os
+import sys
+import time
 
-# Import custom modules
-from hardware_ml_benchmark.core.utils import setup_logging, check_dependencies, print_dependency_status
+from hardware_ml_benchmark.benchmark.benchmarks import BenchmarkRunner
+from hardware_ml_benchmark.benchmark.monitoring import (ResourceMonitor,
+                                                        StatisticsCalculator)
+from hardware_ml_benchmark.benchmark.rendering import RenderingEngine
 from hardware_ml_benchmark.core.cli import CommandLineInterface
+# Import custom modules
+from hardware_ml_benchmark.core.utils import (check_dependencies,
+                                              print_dependency_status,
+                                              setup_logging)
 from hardware_ml_benchmark.data.datasets import DatasetLoader
 from hardware_ml_benchmark.models.models import ModelLoader
-from hardware_ml_benchmark.benchmark.rendering import RenderingEngine
-from hardware_ml_benchmark.benchmark.benchmarks import BenchmarkRunner
-from hardware_ml_benchmark.benchmark.monitoring import ResourceMonitor, StatisticsCalculator
 from hardware_ml_benchmark.output.output import ResultExporter, Visualizer
+
 
 class BenchmarkManager:
     """Benchmark test manager - main control class"""
@@ -182,8 +186,8 @@ class BenchmarkManager:
                 print("Use --list-datasets to see available datasets")
                 print()
                 print("Examples:")
-                print("  python main.py --device cpu --task classification --model resnet18 --dataset MNIST ")
-                print("  python main.py --device cuda:0 --task detection --model yolov8n --dataset Test-Images ")
+                print("  python -m hardware_ml_benchmark.main --device cpu --task classification --model resnet18 --dataset MNIST ")
+                print("  python -m hardware_ml_benchmark.main --device cuda:0 --task detection --model yolov8n --dataset Test-Images ")
                 sys.exit(1)
             
             # Run command line mode
@@ -521,4 +525,6 @@ def main():
     benchmark_manager.run()
 
 if __name__ == "__main__":
+    # add parent directory to sys.path to allow relative imports
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
     main()

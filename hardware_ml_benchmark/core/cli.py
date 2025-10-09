@@ -4,12 +4,18 @@ Command line interface module - handles command line arguments and parameter val
 """
 
 import argparse
-import sys
-import os
-import torch
 import logging
-from hardware_ml_benchmark.core.config import DETECTION_MODELS, CLASSIFICATION_MODELS, SEGMENTATION_MODELS, SAMPLE_OPTIONS
+import os
+import sys
+
+import torch
+
+from hardware_ml_benchmark.core.config import (CLASSIFICATION_MODELS,
+                                               DETECTION_MODELS,
+                                               SAMPLE_OPTIONS,
+                                               SEGMENTATION_MODELS)
 from hardware_ml_benchmark.models.models import validate_model_availability
+
 
 class CommandLineInterface:
     """Command line interface class"""
@@ -26,28 +32,28 @@ class CommandLineInterface:
             epilog="""
 Example usage:
   # Test ResNet18 classification model using CPU
-  python main.py --device cpu --task classification --model resnet18 --dataset MNIST --samples 100
+  python -m hardware_ml_benchmark.main --device cpu --task classification --model resnet18 --dataset MNIST --samples 100
   
   # Test YOLOv8 detection model using GPU  
-  python main.py --device cuda:0 --task detection --model yolov8n --dataset Test-Images --samples 500
+  python -m hardware_ml_benchmark.main --device cuda:0 --task detection --model yolov8n --dataset Test-Images --samples 500
   
   # Test with local model file
-  python main.py --device auto --task detection --model ~/models/my_yolo.pt --dataset Test-Images --samples 100
+  python -m hardware_ml_benchmark.main --device auto --task detection --model ~/models/my_yolo.pt --dataset Test-Images --samples 100
   
   # Test with model from URL
-  python main.py --device auto --task detection --model https://example.com/models/yolo.pt --dataset Test-Images --samples 100
+  python -m hardware_ml_benchmark.main --device auto --task detection --model https://example.com/models/yolo.pt --dataset Test-Images --samples 100
   
   # Test segmentation model with auto device selection
-  python main.py --device auto --task segmentation --model unet_resnet34 --dataset Synthetic-Segmentation --samples 200
+  python -m hardware_ml_benchmark.main --device auto --task segmentation --model unet_resnet34 --dataset Synthetic-Segmentation --samples 200
   
   # Generate visualization plots
-  python main.py --device auto --task classification --model resnet18 --dataset MNIST --samples 100 --plot
+  python -m hardware_ml_benchmark.main --device auto --task classification --model resnet18 --dataset MNIST --samples 100 --plot
   
   # List available models
-  python main.py --list-models
+  python -m hardware_ml_benchmark.main --list-models
   
   # List available datasets  
-  python main.py --list-datasets
+  python -m hardware_ml_benchmark.main --list-datasets
             """
         )
         
@@ -220,13 +226,13 @@ Example usage:
         
         print("\nUsage Examples:")
         print("  # Built-in model")
-        print("  python main.py --task classification --model resnet18 --dataset MNIST --device auto")
+        print("  python -m hardware_ml_benchmark.main --task classification --model resnet18 --dataset MNIST --device auto")
         print("  \n  # Local model file")
-        print("  python main.py --task detection --model ~/models/my_yolo.pt --dataset Test-Images --device cuda:0")
+        print("  python -m hardware_ml_benchmark.main --task detection --model ~/models/my_yolo.pt --dataset Test-Images --device cuda:0")
         print("  \n  # Model from URL")
-        print("  python main.py --task detection --model https://example.com/yolo.pt --dataset Test-Images --device auto")
+        print("  python -m hardware_ml_benchmark.main --task detection --model https://example.com/yolo.pt --dataset Test-Images --device auto")
         print("  \n  # With visualization plots")
-        print("  python main.py --task classification --model resnet18 --dataset MNIST --device auto --plot")
+        print("  python -m hardware_ml_benchmark.main --task classification --model resnet18 --dataset MNIST --device auto --plot")
     
     def _is_url(self, path_str):
         """Check if string is a URL"""
@@ -456,6 +462,12 @@ Example usage:
             print(f"Model: {config['model_info']['name']}")
             if 'custom_path' in config['model_info']:
                 print(f"Model Source: {config['model_info']['custom_path']}")
+            print(f"Dataset: {config['dataset_name']}")
+            print(f"Samples: {config['test_samples'] if config['test_samples'] != -1 else 'All'}")
+            print(f"Output Directory: {config['output_dir']}")
+            print(f"Generate Plots: {'Yes' if config['plot'] else 'No'}")
+            print(f"Quiet Mode: {'Yes' if config['quiet'] else 'No'}")
+            print("="*60)            
             print(f"Dataset: {config['dataset_name']}")
             print(f"Samples: {config['test_samples'] if config['test_samples'] != -1 else 'All'}")
             print(f"Output Directory: {config['output_dir']}")

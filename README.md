@@ -17,16 +17,16 @@ pip install -r requirements.txt
 
 ## Basic Usage
 
-### View Available Options
+### View Available Options (if you run from source code)
 ```bash
 # List all available models
-python main.py --list-models
+python -m hardware_ml_benchmark.main --list-models
 
 # List all available datasets
-python main.py --list-datasets
+python -m hardware_ml_benchmark.main --list-datasets
 
 # View complete help information
-python main.py --help
+python -m hardware_ml_benchmark.main --help
 ```
 
 
@@ -43,7 +43,7 @@ python -c "import torch; print(torch.cuda.is_available())"
 ```bash
 # Run command prompt as administrator
 # Or modify output directory to a directory with write permissions
-python main.py --output-dir C:\Users\YourName\benchmark_results ...
+python -m hardware_ml_benchmark.main --output-dir C:\Users\YourName\benchmark_results ...
 ```
 
 
@@ -51,7 +51,7 @@ python main.py --output-dir C:\Users\YourName\benchmark_results ...
 
 **Quick Test (CPU, 100 samples, classification)**:
 ```bash
-python main.py \
+python -m hardware_ml_benchmark.main \
     --task classification \
     --model resnet18 \
     --dataset MNIST \
@@ -61,7 +61,7 @@ python main.py \
 
 **GPU Accelerated Test(detection)**:
 ```bash
-python main.py \
+python -m hardware_ml_benchmark.main \
     --task detection \
     --model fasterrcnn-resnet50-fpn \
     --dataset COCO-Sample \
@@ -71,7 +71,7 @@ python main.py \
 
 **Large Scale Test (automatic device selection,segmentation)**:
 ```bash
-python main.py \
+python -m hardware_ml_benchmark.main \
     --task segmentation \
     --model unet_resnet34 \
     --dataset Synthetic-Segmentation \
@@ -84,23 +84,23 @@ python main.py \
 
 **Custom Output Directory**:
 ```bash
-    python main.py --output-dir ./my_results
+    python -m hardware_ml_benchmark.main --output-dir ./my_results
 ```
 
 
 **Chart Generation**:
 ```bash
-    python main.py --plot
+    python -m hardware_ml_benchmark.main --plot
 ```
 
 **Silent Mode (reduced output)**:
 ```bash
-    python main.py --quiet
+    python -m hardware_ml_benchmark.main --quiet
 ```
 
 **Test All Samples**:
 ```bash
-    python main.py --samples -1
+    python -m hardware_ml_benchmark.main --samples -1
 ```
 
 ## Model and Dataset Support
@@ -115,19 +115,19 @@ python main.py \
 ##  specifying models by name, local path, or URL
 
 # Model by name (existing functionality)
-python main.py --task detection --model yolov8n --dataset Test-Images
+python -m hardware_ml_benchmark.main --task detection --model yolov8n --dataset Test-Images
 
 # Local path with tilde expansion
-python main.py --task detection --model ~/models/my_yolo.pt --dataset Test-Images
+python -m hardware_ml_benchmark.main --task detection --model ~/models/my_yolo.pt --dataset Test-Images
 
 # Relative path
-python main.py --task detection --model ./checkpoints/best.pth --dataset Test-Images
+python -m hardware_ml_benchmark.main --task detection --model ./checkpoints/best.pth --dataset Test-Images
 
 # Absolute path
-python main.py --task classification --model /home/user/models/resnet.pth --dataset MNIST
+python -m hardware_ml_benchmark.main --task classification --model /home/user/models/resnet.pth --dataset MNIST
 
 # URL
-python main.py --task detection --model https://example.com/models/yolo.pt --dataset Test-Images
+python -m hardware_ml_benchmark.main --task detection --model https://example.com/models/yolo.pt --dataset Test-Images
 
 
 
@@ -154,7 +154,7 @@ python main.py --task detection --model https://example.com/models/yolo.pt --dat
 `0.1.4` Modify the content added in version '0.1.3' and change the import paths to absolute paths.
 
 `0.1.3` Make imports compatible with both: 
-        1. direct script run (python main.py) 
+        1. direct script run (python -m hardware_ml_benchmark.main) 
         2. installed package (python -m hardware_ml_benchmark.main)
 
 `0.1.2` Fix bug, fix main.py
