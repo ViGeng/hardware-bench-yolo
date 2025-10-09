@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hardware-ml-benchmark"
+version = "0.2"
+description = "A hardware benchmarking tool for evaluating the inference performance of deep learning models. It supports pretrained tasks in image classification, object detection, and image segmentation, along with a variety of datasets."
+readme = "README.md"
+authors = [
+    {name = "Wei Geng", email = "wei.geng@tum.de"},
+    {name = "zihan.deng", email = "zihan.deng0517@gmail.com"}
+]
+keywords = ["deep learning", "machine learning", "hardware", "benchmark", "pytorch", "performance", "AI", "inference", "computer vision"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "torch>=1.9.0",
+    "torchvision>=0.10.0",
+    "numpy>=1.19.0",
+    "psutil>=5.8.0",
+    "Pillow>=8.0.0",
+    "tqdm>=4.60.0",
+    "opencv-python",
+    "timm>=0.6.0",
+]
+
+[project.optional-dependencies]
+full = [
+    "ultralytics>=8.0.0",
+    "timm",
+    "segmentation-models-pytorch>=0.3.0",
+    "nvidia-ml-py3>=7.352.0",
+    "matplotlib>=3.3.0",
+    "seaborn>=0.11.0",
+]
+dev = [
+    "pytest>=6.0",
+    "pytest-cov>=2.0",
+    "black>=21.0",
+    "flake8>=3.8",
+]
+
+[project.scripts]
+hardware-ml-benchmark = "hardware_ml_benchmark.main:main"
+
+[project.urls]
+Repository = "https://github.com/ViGeng/hardware-bench-yolo.git"
