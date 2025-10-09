@@ -146,19 +146,3 @@ python -m hardware_ml_benchmark.main --task detection --model https://example.co
 - Energy Efficiency Metrics: Extend monitoring to include power consumption measurements and energy-per-inference metrics, which are increasingly critical for edge deployment and sustainability considerations.
 
 - Asynchronous Inference Profiling: Develop tools to measure pipeline parallelism, async data loading efficiency, and queue management overhead that are critical for production inference servers.
-
-
-
-
-## Update log
-`0.1.4` Modify the content added in version '0.1.3' and change the import paths to absolute paths.
-
-`0.1.3` Make imports compatible with both: 
-        1. direct script run (python -m hardware_ml_benchmark.main) 
-        2. installed package (python -m hardware_ml_benchmark.main)
-
-`0.1.2` Fix bug, fix main.py
-
-`0.1.1` Fix bug, change "model type" to "task"
-
-`0.1.0` First release, continuing the updates from "hardware-benchmark"
