@@ -1,2 +1,5 @@
 __pycache__/
 results/
+build/
+dist/
+hardware_ml_benchmark.egg-info/

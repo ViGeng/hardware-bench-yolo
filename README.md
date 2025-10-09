@@ -129,8 +129,6 @@ python -m hardware_ml_benchmark.main --task classification --model /home/user/mo
 # URL
 python -m hardware_ml_benchmark.main --task detection --model https://example.com/models/yolo.pt --dataset Test-Images
 
-
-
 ## Limitations
 -The current implementation only supports specific model formats (PyTorch .pt/.pth files, YOLO models, and framework-specific architectures).
 
@@ -138,11 +136,12 @@ python -m hardware_ml_benchmark.main --task detection --model https://example.co
 
 - The implementation assumes single-device execution and lacks support for distributed inference, multi-GPU benchmarking, or batch parallelization strategies that would be essential for evaluating large-scale deployment scenarios.
 
-
-
 ## Future work
 - Model Optimization Integration: Implement support for quantized models (INT8, FP16), pruned networks, and knowledge-distilled architectures to enable realistic performance comparisons between optimized and baseline models.
 
 - Energy Efficiency Metrics: Extend monitoring to include power consumption measurements and energy-per-inference metrics, which are increasingly critical for edge deployment and sustainability considerations.
 
 - Asynchronous Inference Profiling: Develop tools to measure pipeline parallelism, async data loading efficiency, and queue management overhead that are critical for production inference servers.
+
+## Contribution
+Past contributors: Zihan Deng

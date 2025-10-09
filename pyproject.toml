@@ -4,23 +4,25 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hardware-ml-benchmark"
-version = "0.2"
+version = "0.2.1"
 description = "A hardware benchmarking tool for evaluating the inference performance of deep learning models. It supports pretrained tasks in image classification, object detection, and image segmentation, along with a variety of datasets."
 readme = "README.md"
 authors = [
     {name = "Wei Geng", email = "wei.geng@tum.de"},
-    {name = "zihan.deng", email = "zihan.deng0517@gmail.com"}
 ]
 keywords = ["deep learning", "machine learning", "hardware", "benchmark", "pytorch", "performance", "AI", "inference", "computer vision"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Testing",
 ]
 requires-python = ">=3.8"
 dependencies = [
@@ -55,3 +57,12 @@ hardware-ml-benchmark = "hardware_ml_benchmark.main:main"
 
 [project.urls]
 Repository = "https://github.com/ViGeng/hardware-bench-yolo.git"
+Homepage = "https://github.com/ViGeng/hardware-bench-yolo"
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = false
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["hardware_ml_benchmark*"]
