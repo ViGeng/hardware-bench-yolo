@@ -9,6 +9,10 @@ A deep learning model performance benchmarking tool that supports image classifi
 - CUDA-supported GPU (optional, for GPU acceleration)
 - Recommended memory: 8GB+ (depends on model size)
 
+### Install as a package
+```bash
+pip install hardware-ml-benchmark
+```
 
 ### Install Basic Dependencies
 ```bash
